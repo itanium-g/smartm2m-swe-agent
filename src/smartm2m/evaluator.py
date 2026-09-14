@@ -85,6 +85,7 @@ class OfficialEvaluator:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env={**os.environ, "PAGER": "cat", "CI": "1"},
+                timeout=max(1800, 1800 * max(1, len(self.config.tasks))),
                 check=False,
             )
             result = EvaluationRun(
@@ -96,6 +97,13 @@ class OfficialEvaluator:
                 proc.stderr,
                 run_id,
                 "" if proc.returncode == 0 else "official evaluator returned non-zero",
+            )
+        except subprocess.TimeoutExpired as exc:
+            stdout = exc.stdout.decode(errors="replace") if isinstance(exc.stdout, bytes) else (exc.stdout or "")
+            stderr = exc.stderr.decode(errors="replace") if isinstance(exc.stderr, bytes) else (exc.stderr or "")
+            result = EvaluationRun(
+                "timeout", command, None, time.monotonic() - started, stdout, stderr, run_id,
+                "official evaluator timeout",
             )
         except OSError as exc:
             result = EvaluationRun(

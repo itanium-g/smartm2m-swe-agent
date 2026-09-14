@@ -87,8 +87,26 @@ class ReferenceRunner:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env={**os.environ, "PAGER": "cat", "CI": "1"},
+                timeout=max(300, self.config.baseline.wall_time_seconds * max(1, len(self.config.tasks))),
                 check=False,
             )
+        except subprocess.TimeoutExpired as exc:
+            timeout_stdout = exc.stdout.decode(errors="replace") if isinstance(exc.stdout, bytes) else (exc.stdout or "")
+            timeout_stderr = exc.stderr.decode(errors="replace") if isinstance(exc.stderr, bytes) else (exc.stderr or "")
+            result = ReferenceRun(
+                "timeout",
+                command,
+                None,
+                time.monotonic() - started,
+                timeout_stdout,
+                timeout_stderr,
+                str(destination),
+                "reference process timeout",
+            )
+            (destination / "reference-run.json").write_text(
+                json.dumps(result.as_dict(), indent=2) + "\n", encoding="utf-8"
+            )
+            return result
         except OSError as exc:
             return ReferenceRun("error", command, None, time.monotonic() - started, "", str(exc), str(destination), str(exc))
         status = "completed" if proc.returncode == 0 else "failed"
@@ -105,3 +123,26 @@ def find_prediction_file(root: str | Path) -> Path | None:
     candidates.extend(sorted(base.rglob("preds.jsonl")))
     candidates.extend(sorted(base.rglob("preds.json")))
     return next((path for path in candidates if path.is_file()), None)
+
+
+def load_prediction_rows(path: str | Path) -> list[dict[str, Any]]:
+    """Read mini's JSON object output or a standard JSONL prediction file."""
+    source = Path(path)
+    if source.suffix == ".json":
+        parsed = json.loads(source.read_text(encoding="utf-8"))
+        if isinstance(parsed, dict):
+            rows: list[dict[str, Any]] = []
+            for instance_id, value in parsed.items():
+                if isinstance(value, dict):
+                    rows.append({**value, "instance_id": value.get("instance_id", instance_id)})
+            return rows
+        if isinstance(parsed, list):
+            return [value for value in parsed if isinstance(value, dict)]
+        return []
+    rows = []
+    for line in source.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            value = json.loads(line)
+            if isinstance(value, dict):
+                rows.append(value)
+    return rows

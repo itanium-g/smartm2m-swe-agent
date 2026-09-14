@@ -15,7 +15,7 @@ from .agent import AgentResult, CustomAgent
 from .config import ConfigError, ExperimentConfig, environment_summary
 from .evaluator import OfficialEvaluator, write_predictions
 from .model import OpenAICompatibleModel
-from .reference import ReferenceRunner, find_prediction_file
+from .reference import ReferenceRunner, find_prediction_file, load_prediction_rows
 from .reporting import (
     hash_result_bundle,
     load_records,
@@ -170,8 +170,7 @@ def _reference_generation(config: ExperimentConfig, run_dir: Path, result: Any) 
     rows_by_id: dict[str, dict[str, Any]] = {}
     if source:
         try:
-            for line in source.read_text(encoding="utf-8").splitlines():
-                value = json.loads(line)
+            for value in load_prediction_rows(source):
                 if value.get("instance_id"):
                     rows_by_id[str(value["instance_id"])] = value
             shutil.copy2(source, reference_dir / "predictions.raw.jsonl")
@@ -255,7 +254,27 @@ def reproduce(
     )
     _json_write(run_dir / "reference" / "run.json", reference_result.as_dict())
     _reference_generation(config, run_dir, reference_result)
-    _custom_generation(config, run_dir)
+    custom_rows = _custom_generation(config, run_dir)
+    usage_rows = [
+        {
+            "arm": "custom",
+            "instance_id": row.get("instance_id"),
+            "model_requests": row.get("model_requests"),
+            "estimated_cost_usd": row.get("estimated_cost_usd"),
+        }
+        for row in custom_rows
+    ]
+    (run_dir / "usage.jsonl").write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False) for row in usage_rows) + "\n",
+        encoding="utf-8",
+    )
+    (run_dir / "contamination.md").write_text(
+        "# Contamination review\n\n"
+        "Primary generation artifacts are retained under reference/ and custom/. "
+        "Complete the post-sealing trajectory review before publishing benchmark claims. "
+        "The current run does not infer that a patch difference proves absence of memorization.\n",
+        encoding="utf-8",
+    )
 
     evaluator = OfficialEvaluator(config)
     evaluation = run_dir / "evaluation"
