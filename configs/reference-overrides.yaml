@@ -1,0 +1,13 @@
+# Loaded after mini-swe-agent's pinned built-in swebench.yaml.
+# This is configuration-only; the upstream agent, prompt, parser, and
+# environment implementation remain untouched.
+agent:
+  step_limit: 60
+  cost_limit: 0.50
+environment:
+  timeout: 120
+model:
+  model_kwargs:
+    temperature: 0
+    seed: 42
+    max_tokens: 8192
