@@ -38,6 +38,7 @@ class ValidationResult:
     duration_seconds: float
     output: str
     reason: str = ""
+    setup_commands: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -63,11 +64,12 @@ def validate_clean_replay(
     *,
     timeout_seconds: int = 120,
     max_output_chars: int = 20000,
+    setup_commands: tuple[str, ...] = (),
 ) -> ValidationResult:
     workspace = Path(root).resolve()
     patch = capture_patch(workspace)
     patch_hash = sha256_text(patch)
-    command_hash = sha256_text(command)
+    command_hash = sha256_text("\n".join((*setup_commands, command)))
     base = git_value(workspace, "rev-parse", "HEAD")
     if not patch:
         return ValidationResult("invalid", patch_hash, command_hash, base, command, None, False, 0.0, "", "empty patch")
@@ -88,6 +90,53 @@ def validate_clean_replay(
                 applied.stderr.strip(), "patch could not be replayed on clean base",
             )
         started = time.monotonic()
+        setup_output: list[str] = []
+        for setup in setup_commands:
+            try:
+                prepared = subprocess.run(
+                    setup,
+                    cwd=clean,
+                    shell=True,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    timeout=timeout_seconds,
+                    env={**os.environ, "CI": "1", "PAGER": "cat"},
+                    check=False,
+                )
+                setup_output.append(f"$ {setup}\n{prepared.stdout or ''}")
+            except subprocess.TimeoutExpired as exc:
+                setup_output.append(
+                    f"$ {setup}\n{(exc.stdout or '') if isinstance(exc.stdout, str) else ''}"
+                    f"\n[timeout after {timeout_seconds}s]"
+                )
+                return ValidationResult(
+                    "failed",
+                    patch_hash,
+                    command_hash,
+                    base,
+                    command,
+                    None,
+                    True,
+                    time.monotonic() - started,
+                    "\n".join(setup_output)[-max_output_chars:],
+                    "setup command timed out",
+                    setup_commands,
+                )
+            if prepared.returncode != 0:
+                return ValidationResult(
+                    "failed",
+                    patch_hash,
+                    command_hash,
+                    base,
+                    command,
+                    prepared.returncode,
+                    False,
+                    time.monotonic() - started,
+                    "\n".join(setup_output)[-max_output_chars:],
+                    "setup command failed",
+                    setup_commands,
+                )
         timed_out = False
         try:
             tested = subprocess.run(
@@ -102,11 +151,14 @@ def validate_clean_replay(
                 check=False,
             )
             returncode: int | None = tested.returncode
-            output = tested.stdout or ""
+            output = "\n".join([*setup_output, tested.stdout or ""])
         except subprocess.TimeoutExpired as exc:
             timed_out = True
             returncode = None
-            output = (exc.stdout or "") if isinstance(exc.stdout, str) else ""
+            output = "\n".join([
+                *setup_output,
+                (exc.stdout or "") if isinstance(exc.stdout, str) else "",
+            ])
             output += f"\n[timeout after {timeout_seconds}s]"
         duration = time.monotonic() - started
         return ValidationResult(
@@ -120,6 +172,7 @@ def validate_clean_replay(
             duration,
             output[-max_output_chars:],
             "" if returncode == 0 and not timed_out else "visible test command failed",
+            setup_commands,
         )
 
 

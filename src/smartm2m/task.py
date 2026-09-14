@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import shutil
 import subprocess
@@ -11,20 +10,12 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
-from .config import ConfigError, TaskSpec
+from .config import ConfigError, TaskSpec, load_data
 
 
 def load_manifest(path: str | Path) -> list[TaskSpec]:
     source = Path(path)
-    raw: Any
-    try:
-        raw = json.loads(source.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        try:
-            import yaml  # type: ignore[import-not-found]
-        except ImportError as exc:
-            raise ConfigError(f"{source} requires PyYAML because it is not JSON-compatible") from exc
-        raw = yaml.safe_load(source.read_text(encoding="utf-8"))
+    raw: Any = load_data(source)
     if isinstance(raw, list):
         values = raw
     elif isinstance(raw, dict) and isinstance(raw.get("tasks"), list):
@@ -52,6 +43,25 @@ def _run_setup(root: Path, commands: tuple[str, ...]) -> None:
         )
         if result.returncode != 0:
             raise RuntimeError(f"setup command failed ({result.returncode}): {command}\n{result.stdout[-4000:]}")
+
+
+def _checkout_clean_base(root: Path, base_commit: str) -> None:
+    """Reset the disposable copy before detaching it at the requested commit."""
+    reset = _git(root, ["reset", "--hard"])
+    if reset.returncode != 0:
+        raise RuntimeError(reset.stderr.strip() or "task source is not a usable git repository")
+    cleaned = _git(root, ["clean", "-fdx"])
+    if cleaned.returncode != 0:
+        raise RuntimeError(cleaned.stderr.strip() or "could not clean the task workspace")
+    checked = _git(root, ["checkout", "--detach", base_commit])
+    if checked.returncode != 0:
+        raise RuntimeError(checked.stderr.strip() or f"could not checkout base commit {base_commit}")
+    reset = _git(root, ["reset", "--hard", base_commit])
+    if reset.returncode != 0:
+        raise RuntimeError(reset.stderr.strip() or f"could not reset to base commit {base_commit}")
+    cleaned = _git(root, ["clean", "-fdx"])
+    if cleaned.returncode != 0:
+        raise RuntimeError(cleaned.stderr.strip() or "could not clean the checked-out task workspace")
 
 
 @contextmanager
@@ -86,9 +96,7 @@ def prepared_workspace(task: TaskSpec, parent: str | Path) -> Iterator[Path]:
             raise RuntimeError(f"task {task.instance_id} has no repository source")
 
         if task.base_commit:
-            checked = _git(destination, ["checkout", "--detach", task.base_commit])
-            if checked.returncode != 0:
-                raise RuntimeError(checked.stderr.strip() or f"could not checkout base commit {task.base_commit}")
+            _checkout_clean_base(destination, task.base_commit)
         _run_setup(destination, task.setup_commands)
         yield destination
     finally:
@@ -96,10 +104,23 @@ def prepared_workspace(task: TaskSpec, parent: str | Path) -> Iterator[Path]:
 
 
 def generation_payload(task: TaskSpec) -> dict[str, Any]:
-    """Build the exact safe input projection and assert hidden-field absence."""
+    """Build the exact safe input projection and assert hidden-field absence.
+
+    The check is key-based: ordinary issue prose is allowed to mention a patch
+    or test names without being mistaken for leaked evaluator data.
+    """
     payload = task.generation_projection()
-    encoded = json.dumps(payload, sort_keys=True)
-    for forbidden in ("patch", "test_patch", "hints_text", "FAIL_TO_PASS", "PASS_TO_PASS"):
-        if forbidden in encoded:
-            raise ConfigError(f"forbidden evaluator token appeared in generation payload: {forbidden}")
+    forbidden = {"patch", "test_patch", "hints_text", "fail_to_pass", "pass_to_pass", "FAIL_TO_PASS", "PASS_TO_PASS"}
+
+    def check_keys(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, nested in value.items():
+                if str(key) in forbidden:
+                    raise ConfigError(f"forbidden evaluator field appeared in generation payload: {key}")
+                check_keys(nested)
+        elif isinstance(value, (list, tuple)):
+            for nested in value:
+                check_keys(nested)
+
+    check_keys(payload)
     return payload

@@ -53,6 +53,48 @@ def _evaluation_value(record: dict[str, Any]) -> tuple[bool, str]:
     return False, str(record.get("reason", record.get("error", "unparseable evaluation record")))
 
 
+def _records_from_document(parsed: Any) -> list[dict[str, Any]]:
+    """Normalize JSONL rows, evaluator maps, and SWE-bench run summaries."""
+    if isinstance(parsed, list):
+        return [value for value in parsed if isinstance(value, dict)]
+    if not isinstance(parsed, dict):
+        return []
+    if parsed.get("instance_id"):
+        return [parsed]
+    if isinstance(parsed.get("results"), list):
+        return [value for value in parsed["results"] if isinstance(value, dict)]
+    if isinstance(parsed.get("results"), dict):
+        return [
+            {**value, "instance_id": value.get("instance_id", instance_id)}
+            for instance_id, value in parsed["results"].items()
+            if isinstance(value, dict)
+        ]
+    if parsed and all(isinstance(value, dict) for value in parsed.values()):
+        return [
+            {**value, "instance_id": value.get("instance_id", instance_id)}
+            for instance_id, value in parsed.items()
+        ]
+
+    summary_ids: set[str] = set()
+    for key in (
+        "resolved_ids", "unresolved_ids", "error_ids", "incomplete_ids",
+        "empty_patch_ids", "submitted_ids",
+    ):
+        values = parsed.get(key)
+        if isinstance(values, list):
+            summary_ids.update(str(value) for value in values)
+    resolved_values = parsed.get("resolved_ids")
+    resolved_ids = {str(value) for value in resolved_values} if isinstance(resolved_values, list) else set()
+    return [
+        {
+            "instance_id": instance_id,
+            "resolved": instance_id in resolved_ids,
+            "status": "resolved" if instance_id in resolved_ids else "not_resolved",
+        }
+        for instance_id in sorted(summary_ids)
+    ]
+
+
 def load_records(path: str | Path) -> dict[str, dict[str, Any]]:
     source = Path(path)
     if not source.exists():
@@ -70,24 +112,19 @@ def load_records(path: str | Path) -> dict[str, dict[str, Any]]:
     for file in dict.fromkeys(files):
         try:
             if file.suffix == ".jsonl":
-                values = [
+                documents = [
                     json.loads(line)
                     for line in file.read_text(encoding="utf-8").splitlines()
                     if line.strip()
                 ]
             else:
-                parsed = json.loads(file.read_text(encoding="utf-8"))
-                if isinstance(parsed, list):
-                    values = parsed
-                elif isinstance(parsed, dict) and isinstance(parsed.get("results"), list):
-                    values = parsed["results"]
-                else:
-                    values = [parsed]
+                documents = [json.loads(file.read_text(encoding="utf-8"))]
         except (OSError, json.JSONDecodeError, AttributeError):
             continue
-        for value in values:
-            if isinstance(value, dict) and value.get("instance_id"):
-                output[str(value["instance_id"])] = value
+        for document in documents:
+            for value in _records_from_document(document):
+                if isinstance(value, dict) and value.get("instance_id"):
+                    output[str(value["instance_id"])] = value
     return output
 
 

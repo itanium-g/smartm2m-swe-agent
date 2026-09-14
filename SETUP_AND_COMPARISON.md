@@ -36,6 +36,11 @@ mini-extra swebench -c swebench.yaml -c configs/reference-overrides.yaml \
 ~~~
 
 The exact argv, package/version, stdout/stderr, and output files are captured.
+The runner resolves the overlay path and executes the reference in its output
+directory so any reference-side logs remain inside the run bundle.
+It also injects the lock's base URL, decoding values, and retry-attempt count
+through mini-swe-agent's supported configuration/environment hooks; the API
+credential remains environment-only.
 Only configuration values are overridden; no reference source or prompt is
 copied into the custom agent.
 
@@ -46,6 +51,7 @@ The default official command is:
 ~~~bash
 python -m swebench.harness.run_evaluation \
   --dataset_name princeton-nlp/SWE-bench_Verified \
+  --split test \
   --predictions_path results/<run>/<arm>/predictions.jsonl \
   --max_workers 1 --run_id <unique-run-id>
 ~~~

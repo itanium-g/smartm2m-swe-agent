@@ -47,6 +47,16 @@ def _redact(value: str) -> str:
     return value
 
 
+def _redact_json(value: Any) -> Any:
+    if isinstance(value, str):
+        return _redact(value)
+    if isinstance(value, list):
+        return [_redact_json(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _redact_json(item) for key, item in value.items()}
+    return value
+
+
 def _utc_run_id(prefix: str) -> str:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     return f"{prefix}-{stamp}"
@@ -57,7 +67,7 @@ def preflight(config: ExperimentConfig, *, allow_unresolved: bool = False) -> di
     unresolved_issues = list(manifest_issues)
     errors = [
         issue for issue in manifest_issues
-        if not (allow_unresolved and issue.startswith("manifest has "))
+        if not (allow_unresolved and not config.tasks and issue.startswith("manifest has "))
     ]
     warnings: list[str] = []
     checks: dict[str, Any] = {
@@ -73,12 +83,16 @@ def preflight(config: ExperimentConfig, *, allow_unresolved: bool = False) -> di
     if not config.tasks:
         warnings.append("no runnable tasks are present; provide the employer-confirmed fixed manifest")
     for task in config.tasks:
+        if not task.base_commit:
+            errors.append(f"{task.instance_id}: base_commit is required for a reproducible run")
         if task.repo_path and not Path(task.repo_path).expanduser().exists():
             errors.append(f"{task.instance_id}: repo_path does not exist: {task.repo_path}")
         if not task.repo_path and not task.repo_url:
-            warnings.append(f"{task.instance_id}: no local repo_path/repo_url; execution will be blocked")
+            errors.append(f"{task.instance_id}: no local repo_path/repo_url")
     if shutil.which(config.reference.executable) is None:
         warnings.append(f"reference executable is not installed: {config.reference.executable}")
+    if config.model.input_usd_per_million is None or config.model.output_usd_per_million is None:
+        warnings.append("model pricing is incomplete; observed API spend and cost-limit parity cannot be verified")
     if not os.environ.get(config.model.api_key_env):
         warnings.append(
             f"model key is not set ({config.model.api_key_env}); generation will record provider_error"
@@ -98,12 +112,12 @@ def _write_agent_artifacts(
     _json_write(directory / "agent.json", result.as_dict())
     _json_write(directory / "trajectory.json", {
         "instance_id": task.instance_id,
-        "events": result.events,
-        "generation_input": task.generation_projection(),
+        "events": _redact_json(result.events),
+        "generation_input": _redact_json(task.generation_projection()),
     })
     with (directory / "commands.jsonl").open("w", encoding="utf-8") as stream:
         for command in result.commands:
-            safe = {**command, "output": _redact(str(command.get("output", "")))}
+            safe = _redact_json(command)
             stream.write(json.dumps(safe, ensure_ascii=False) + "\n")
     (directory / "candidate.patch").write_text(result.patch, encoding="utf-8")
 
@@ -129,16 +143,21 @@ def _custom_generation(config: ExperimentConfig, run_dir: Path) -> list[dict[str
                 ).run(task, runner)
                 _write_agent_artifacts(instance_dir, result, task)
                 validation = None
-                if result.patch:
+                if result.patch and result.status == "submitted":
                     validation = validate_clean_replay(
                         workspace,
                         task.test_commands[0],
                         timeout_seconds=config.custom.command_timeout_seconds,
+                        setup_commands=task.setup_commands,
                     )
                     write_validation(instance_dir / "validation.json", validation)
                 row = result.as_dict()
-                row["model_patch"] = result.patch
+                sealed = result.patch if validation and validation.status == "passed" else ""
+                row["model_patch"] = sealed
                 row["validation_status"] = validation.status if validation else "not_run"
+                if result.patch and result.status == "submitted" and not sealed:
+                    row["status"] = "validation_failed"
+                    row["reason"] = validation.reason if validation else "clean replay was not run"
                 rows.append(row)
         except Exception as exc:
             row = {
@@ -173,13 +192,14 @@ def _reference_generation(config: ExperimentConfig, run_dir: Path, result: Any) 
             for value in load_prediction_rows(source):
                 if value.get("instance_id"):
                     rows_by_id[str(value["instance_id"])] = value
-            shutil.copy2(source, reference_dir / "predictions.raw.jsonl")
+            shutil.copy2(source, reference_dir / f"predictions.raw{source.suffix}")
         except (OSError, json.JSONDecodeError):
             pass
     rows: list[dict[str, Any]] = []
     for task in config.tasks:
         value = rows_by_id.get(task.instance_id, {})
-        patch = str(value.get("model_patch", ""))
+        raw_patch = value.get("model_patch", value.get("patch", ""))
+        patch = "" if raw_patch is None else str(raw_patch)
         rows.append({
             "instance_id": task.instance_id,
             "status": "submitted" if patch else result.status,
@@ -227,7 +247,10 @@ def reproduce(
         raise ConfigError("preflight failed: " + "; ".join(checks["errors"]))
     if not config.tasks:
         raise ConfigError("no runnable tasks are present; fill tasks/evaluation.json before reproduce")
-    run_dir = config.results_root / (run_id or _utc_run_id(config.run_id_prefix))
+    selected_run_id = run_id or _utc_run_id(config.run_id_prefix)
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", selected_run_id):
+        raise ConfigError("run_id must contain only letters, numbers, '.', '_' or '-' and be at most 128 characters")
+    run_dir = config.results_root / selected_run_id
     if run_dir.exists():
         raise ConfigError(f"run directory already exists: {run_dir}")
     run_dir.mkdir(parents=True, exist_ok=False)

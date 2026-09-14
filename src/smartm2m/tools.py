@@ -97,12 +97,17 @@ def _validate_patch_paths(patch: str) -> None:
         raise ToolError("patch has no file headers")
     for value in paths:
         path = PurePosixPath(value)
-        if path.is_absolute() or ".." in path.parts or ".git" in path.parts:
+        if path.is_absolute() or ".." in path.parts or any(part.lower() == ".git" for part in path.parts):
             raise ToolError(f"unsafe patch path: {value}")
         lower = value.lower()
         if lower.startswith(("tests/", "test/")) or "/tests/" in lower:
             raise ToolError("test files are outside the generation edit boundary")
-        if lower.endswith(("pyproject.toml", "setup.py", "setup.cfg", "tox.ini", "package.json")):
+        if lower.startswith((".github/", ".gitlab/")) or lower in {"makefile", "dockerfile"}:
+            raise ToolError("automation and container files are outside the generation edit boundary")
+        if lower.endswith((
+            "pyproject.toml", "setup.py", "setup.cfg", "tox.ini", "package.json",
+            "package-lock.json", "requirements.txt", "poetry.lock", "uv.lock",
+        )):
             raise ToolError("build/configuration files are outside the generation edit boundary")
 
 
@@ -121,7 +126,7 @@ def _git_patch(root: Path) -> str:
         if path.is_symlink() or not path.is_file():
             continue
         diff = subprocess.run(
-            ["git", "diff", "--no-index", "--binary", "/dev/null", raw],
+            ["git", "diff", "--no-index", "--binary", "/dev/null", "--", raw],
             cwd=root,
             text=True,
             capture_output=True,
@@ -144,6 +149,7 @@ class ToolRunner:
         self.commands: list[CommandRecord] = []
         self.submitted = False
         self.last_patch_error: str | None = None
+        self._last_test_patch_sha256: str | None = None
         if not self.root.is_dir():
             raise ToolError(f"task workspace does not exist: {self.root}")
 
@@ -189,7 +195,10 @@ class ToolRunner:
             raise ToolError(f"search path not found: {path}")
         if shutil.which("rg"):
             proc = subprocess.run(
-                ["rg", "--line-number", "--no-heading", "--color", "never", "--hidden", "-g", "!.git", query, str(base)],
+                [
+                    "rg", "--line-number", "--no-heading", "--color", "never", "--hidden",
+                    "-g", "!.git", "--", query, str(base),
+                ],
                 cwd=self.root,
                 text=True,
                 capture_output=True,
@@ -256,7 +265,9 @@ class ToolRunner:
             return ToolResult(False, f"patch application failed: {self.last_patch_error}", {"error": "patch_apply_failed"})
         check = _run_git(self.root, ["diff", "--check"])
         if check.returncode != 0:
+            self._last_test_patch_sha256 = None
             return ToolResult(False, f"patch has whitespace errors: {check.stdout or check.stderr}", {"error": "diff_check_failed"})
+        self._last_test_patch_sha256 = None
         return ToolResult(True, f"applied patch to {len(set(_patch_paths(patch)))} file(s)", {"paths": _patch_paths(patch)})
 
     def run_tests(self, command: str = "default", timeout_seconds: int | None = None) -> ToolResult:
@@ -297,6 +308,8 @@ class ToolRunner:
         visible = output[-self.max_output_chars :] if full_chars > self.max_output_chars else output
         record = CommandRecord(command, returncode, output, duration, timed_out, None, full_chars)
         self.commands.append(record)
+        current_patch_sha256 = hashlib.sha256(_git_patch(self.root).encode()).hexdigest()
+        self._last_test_patch_sha256 = current_patch_sha256 if returncode == 0 and not timed_out else None
         lower = output.lower()
         build_failure = any(marker in lower for marker in ("syntaxerror", "indentationerror", "modulenotfounderror", "importerror"))
         metadata = {
@@ -316,11 +329,24 @@ class ToolRunner:
 
     def submit_patch(self) -> ToolResult:
         patch = _git_patch(self.root)
+        patch_sha256 = hashlib.sha256(patch.encode()).hexdigest()
+        if not patch:
+            return ToolResult(
+                False,
+                "no source changes were found",
+                {"patch_sha256": patch_sha256, "has_changes": False, "error": "empty_patch"},
+            )
+        if self._last_test_patch_sha256 != patch_sha256:
+            return ToolResult(
+                False,
+                "run a declared test command successfully after the latest edit before submitting",
+                {"patch_sha256": patch_sha256, "has_changes": True, "error": "tests_required"},
+            )
         self.submitted = True
         return ToolResult(
             True,
-            "patch sealed for validation" if patch else "no source changes were found",
-            {"patch_sha256": hashlib.sha256(patch.encode()).hexdigest(), "has_changes": bool(patch)},
+            "patch sealed for validation",
+            {"patch_sha256": patch_sha256, "has_changes": True},
         )
 
     def rollback(self) -> ToolResult:
@@ -345,6 +371,7 @@ class ToolRunner:
             apply = _run_git(self.root, ["apply", "--whitespace=nowarn", "-"], input_text=checkpoint.tracked_patch)
             if apply.returncode != 0:
                 raise ToolError(apply.stderr.strip() or "could not restore checkpoint patch")
+        self._last_test_patch_sha256 = None
         return ToolResult(True, "restored the latest checkpoint", {"patch_sha256": hashlib.sha256(_git_patch(self.root).encode()).hexdigest()})
 
     def state_hash(self) -> str:

@@ -26,6 +26,7 @@ class ReferenceRun:
     stderr: str
     output_path: str
     reason: str = ""
+    working_directory: str = ""
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -41,16 +42,48 @@ class ReferenceRunner:
     def __init__(self, config: ExperimentConfig):
         self.config = config
 
+    def _reference_config_path(self) -> str:
+        configured = self.config.reference.config_path
+        if not configured:
+            return ""
+        candidate = Path(configured)
+        if candidate.is_absolute():
+            return str(candidate)
+        repo_root = self.config.config_path.parent.parent
+        for base in (self.config.config_path.parent, repo_root):
+            resolved = (base / candidate).resolve()
+            if resolved.is_file():
+                return str(resolved)
+        return configured
+
+    def _environment(self) -> dict[str, str]:
+        environment = {**os.environ, "PAGER": "cat", "CI": "1"}
+        key = os.environ.get(self.config.model.api_key_env)
+        if key:
+            # The locked default model uses LiteLLM's openai-compatible route.
+            # Keep the credential in the environment; never put it in argv or artifacts.
+            environment["OPENAI_API_KEY"] = key
+        environment["MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT"] = str(self.config.model.max_retries + 1)
+        return environment
+
     def command(self, output_dir: Path) -> list[str]:
         reference = self.config.reference
         output_dir.mkdir(parents=True, exist_ok=True)
+        reference_config = self._reference_config_path()
         if reference.command_template:
             rendered = reference.command_template.format(
                 model=self.config.model.model,
                 subset=reference.subset,
                 split=reference.split,
+                workers=reference.workers,
+                base_url=self.config.model.base_url,
+                temperature=self.config.model.temperature,
+                seed=self.config.model.seed if self.config.model.seed is not None else "null",
+                max_tokens=self.config.model.max_tokens,
+                timeout=self.config.model.timeout_seconds,
                 output=str(output_dir),
                 config=reference.config_path,
+                reference_config=reference_config,
                 task_filter=_task_filter(self.config.tasks),
             )
             return shlex.split(rendered)
@@ -64,8 +97,8 @@ class ReferenceRunner:
             "--filter", _task_filter(self.config.tasks),
             "--output", str(output_dir),
         ]
-        if reference.config_path:
-            command.extend(["--config", reference.config_path])
+        if reference_config:
+            command.extend(["--config", reference_config])
         return command
 
     def run(self, output_dir: str | Path, *, dry_run: bool = False) -> ReferenceRun:
@@ -73,11 +106,15 @@ class ReferenceRunner:
         destination.mkdir(parents=True, exist_ok=True)
         command = self.command(destination)
         if dry_run:
-            return ReferenceRun("dry_run", command, None, 0.0, "", "", str(destination))
+            return ReferenceRun(
+                "dry_run", command, None, 0.0, "", "", str(destination),
+                working_directory=str(destination),
+            )
         if shutil.which(command[0]) is None:
             return ReferenceRun(
                 "unavailable", command, None, 0.0, "", "", str(destination),
                 f"executable not found: {command[0]}",
+                str(destination),
             )
         started = time.monotonic()
         try:
@@ -86,7 +123,8 @@ class ReferenceRunner:
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                env={**os.environ, "PAGER": "cat", "CI": "1"},
+                env=self._environment(),
+                cwd=destination,
                 timeout=max(300, self.config.baseline.wall_time_seconds * max(1, len(self.config.tasks))),
                 check=False,
             )
@@ -102,15 +140,22 @@ class ReferenceRunner:
                 timeout_stderr,
                 str(destination),
                 "reference process timeout",
+                str(destination),
             )
             (destination / "reference-run.json").write_text(
                 json.dumps(result.as_dict(), indent=2) + "\n", encoding="utf-8"
             )
             return result
         except OSError as exc:
-            return ReferenceRun("error", command, None, time.monotonic() - started, "", str(exc), str(destination), str(exc))
+            return ReferenceRun(
+                "error", command, None, time.monotonic() - started, "", str(exc),
+                str(destination), str(exc), str(destination),
+            )
         status = "completed" if proc.returncode == 0 else "failed"
-        result = ReferenceRun(status, command, proc.returncode, time.monotonic() - started, proc.stdout, proc.stderr, str(destination))
+        result = ReferenceRun(
+            status, command, proc.returncode, time.monotonic() - started,
+            proc.stdout, proc.stderr, str(destination), working_directory=str(destination),
+        )
         (destination / "reference-run.json").write_text(
             json.dumps(result.as_dict(), indent=2) + "\n", encoding="utf-8"
         )

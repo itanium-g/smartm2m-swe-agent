@@ -25,9 +25,14 @@ class EvaluationRun:
     stderr: str
     run_id: str
     reason: str = ""
+    working_directory: str = ""
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+def _patch_text(value: Any) -> str:
+    return "" if value is None else str(value)
 
 
 def write_predictions(
@@ -43,7 +48,7 @@ def write_predictions(
             stream.write(json.dumps({
                 "instance_id": str(row["instance_id"]),
                 "model_name_or_path": model_name,
-                "model_patch": str(row.get("model_patch", row.get("patch", ""))),
+                "model_patch": _patch_text(row.get("model_patch", row.get("patch", ""))),
             }, ensure_ascii=False) + "\n")
 
 
@@ -57,6 +62,7 @@ class OfficialEvaluator:
                 dataset_name=self.config.dataset_name,
                 predictions=str(predictions),
                 run_id=run_id,
+                split=self.config.reference.split,
             ))
         return [
             sys.executable,
@@ -64,6 +70,8 @@ class OfficialEvaluator:
             "swebench.harness.run_evaluation",
             "--dataset_name",
             self.config.dataset_name,
+            "--split",
+            self.config.reference.split,
             "--predictions_path",
             str(predictions),
             "--max_workers",
@@ -85,6 +93,7 @@ class OfficialEvaluator:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env={**os.environ, "PAGER": "cat", "CI": "1"},
+                cwd=destination,
                 timeout=max(1800, 1800 * max(1, len(self.config.tasks))),
                 check=False,
             )
@@ -97,6 +106,7 @@ class OfficialEvaluator:
                 proc.stderr,
                 run_id,
                 "" if proc.returncode == 0 else "official evaluator returned non-zero",
+                str(destination),
             )
         except subprocess.TimeoutExpired as exc:
             stdout = exc.stdout.decode(errors="replace") if isinstance(exc.stdout, bytes) else (exc.stdout or "")
@@ -104,10 +114,11 @@ class OfficialEvaluator:
             result = EvaluationRun(
                 "timeout", command, None, time.monotonic() - started, stdout, stderr, run_id,
                 "official evaluator timeout",
+                str(destination),
             )
         except OSError as exc:
             result = EvaluationRun(
-                "unavailable", command, None, time.monotonic() - started, "", str(exc), run_id, str(exc)
+                "unavailable", command, None, time.monotonic() - started, "", str(exc), run_id, str(exc), str(destination)
             )
         (destination / "evaluation-run.json").write_text(
             json.dumps(result.as_dict(), indent=2) + "\n", encoding="utf-8"

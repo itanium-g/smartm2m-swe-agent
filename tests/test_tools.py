@@ -40,6 +40,7 @@ def test_tool_applies_patch_and_replays_it_on_clean_base(tmp_path: Path):
 """
     result = runner.apply_patch(patch)
     assert result.ok
+    assert not runner.submit_patch().ok
     assert runner.run_tests().ok
     assert runner.submit_patch().ok
     validation = validate_clean_replay(repo, command, timeout_seconds=20)

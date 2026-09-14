@@ -27,18 +27,34 @@ def sha256_file(path: Path) -> str:
     return sha256_bytes(path.read_bytes())
 
 
-def load_document(path: Path) -> dict[str, Any]:
+def load_data(path: Path) -> Any:
+    """Load JSON or safe YAML while preserving a list-valued manifest."""
+    text = path.read_text(encoding="utf-8")
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(text)
     except json.JSONDecodeError:
         try:
             import yaml  # type: ignore[import-not-found]
         except ImportError as exc:
             raise ConfigError(f"{path} is not JSON-compatible YAML; install PyYAML to read it") from exc
-        value = yaml.safe_load(path.read_text(encoding="utf-8"))
+        return yaml.safe_load(text)
+
+
+def load_document(path: Path) -> dict[str, Any]:
+    value = load_data(path)
     if not isinstance(value, dict):
         raise ConfigError(f"{path} must contain an object at the top level")
     return value
+
+
+def _string_tuple(value: Any, field_name: str) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        return (value,)
+    if not isinstance(value, (list, tuple)):
+        raise ConfigError(f"{field_name} must be a string or array of strings")
+    return tuple(str(item) for item in value)
 
 
 @dataclass(frozen=True)
@@ -63,13 +79,11 @@ class TaskSpec:
         missing = [key for key in required if not raw.get(key)]
         if missing:
             raise ConfigError(f"task is missing required fields: {', '.join(missing)}")
-        tests = raw.get("test_commands", ["python -m pytest -q"])
-        setup = raw.get("setup_commands", [])
-        if isinstance(tests, str):
-            tests = [tests]
-        if isinstance(setup, str):
-            setup = [setup]
-        hidden = {"patch", "test_patch", "hints_text"}
+        tests = _string_tuple(raw.get("test_commands", ["python -m pytest -q"]), "test_commands")
+        setup = _string_tuple(raw.get("setup_commands", []), "setup_commands")
+        if not tests:
+            raise ConfigError("test_commands must contain at least one trusted command")
+        hidden = {"patch", "test_patch", "hints_text", "FAIL_TO_PASS", "PASS_TO_PASS"}
         leaked = sorted(hidden.intersection(raw))
         if leaked:
             raise ConfigError(
@@ -86,12 +100,12 @@ class TaskSpec:
             base_commit=str(raw.get("base_commit", "")),
             repo_url=str(raw.get("repo_url", "")),
             repo_path=str(raw.get("repo_path", "")),
-            test_commands=tuple(str(x) for x in tests),
-            setup_commands=tuple(str(x) for x in setup),
+            test_commands=tests,
+            setup_commands=setup,
             split=str(raw.get("split", "test")),
             image=str(raw.get("image", "")),
-            fail_to_pass=tuple(str(x) for x in raw.get("fail_to_pass", [])),
-            pass_to_pass=tuple(str(x) for x in raw.get("pass_to_pass", [])),
+            fail_to_pass=_string_tuple(raw.get("fail_to_pass", []), "fail_to_pass"),
+            pass_to_pass=_string_tuple(raw.get("pass_to_pass", []), "pass_to_pass"),
             metadata=metadata,
         )
 
@@ -208,18 +222,29 @@ class ExperimentConfig:
     def load(cls, path: str | Path) -> "ExperimentConfig":
         config_path = Path(path).resolve()
         raw = load_document(config_path)
-        manifest_value = raw.get("manifest", {}).get("path", raw.get("manifest_path", ""))
+        manifest_config = raw.get("manifest", {})
+        if isinstance(manifest_config, dict):
+            manifest_value = manifest_config.get("path", raw.get("manifest_path", ""))
+            expected_value = manifest_config.get("expected_count", raw.get("expected_count"))
+        else:
+            manifest_value = raw.get("manifest_path", manifest_config)
+            expected_value = raw.get("expected_count")
         if not manifest_value:
             raise ConfigError("configuration must declare manifest.path")
         manifest_path = (config_path.parent / str(manifest_value)).resolve()
         if not manifest_path.exists():
             raise ConfigError(f"manifest does not exist: {manifest_path}")
-        manifest = load_document(manifest_path)
-        task_values = manifest.get("tasks", manifest if isinstance(manifest, list) else [])
+        manifest = load_data(manifest_path)
+        if isinstance(manifest, list):
+            task_values = manifest
+        elif isinstance(manifest, dict):
+            task_values = manifest.get("tasks", [])
+        else:
+            task_values = []
         if not isinstance(task_values, list):
             raise ConfigError(f"{manifest_path} must contain a tasks array")
         tasks = tuple(TaskSpec.from_mapping(item) for item in task_values)
-        expected = int(raw.get("manifest", {}).get("expected_count", raw.get("expected_count", len(tasks))))
+        expected = int(len(tasks) if expected_value is None else expected_value)
         return cls(
             protocol_version=str(raw.get("protocol_version", "track3-v1")),
             manifest_path=manifest_path,
@@ -248,7 +273,7 @@ class ExperimentConfig:
         if len(self.tasks) != self.expected_count:
             errors.append(f"manifest has {len(self.tasks)} tasks but expected_count is {self.expected_count}")
         for task in self.tasks:
-            if any(field in task.metadata for field in ("patch", "test_patch", "hints_text")):
+            if any(field in task.metadata for field in ("patch", "test_patch", "hints_text", "FAIL_TO_PASS", "PASS_TO_PASS")):
                 errors.append(f"forbidden evaluator field leaked into metadata for {task.instance_id}")
         if errors and not allow_unresolved:
             raise ConfigError("manifest gate failed: " + "; ".join(errors))

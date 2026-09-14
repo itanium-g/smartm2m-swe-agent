@@ -27,7 +27,7 @@
     "split": "test",
     "workers": 1,
     "config_path": "configs/reference-overrides.yaml",
-    "command_template": "mini-extra swebench -c swebench.yaml -c configs/reference-overrides.yaml --model {model} --subset {subset} --split {split} --workers 1 --filter {task_filter} --output {output}"
+    "command_template": "mini-extra swebench -c swebench.yaml -c {reference_config} -c model.model_kwargs.api_base={base_url} -c model.model_kwargs.temperature={temperature} -c model.model_kwargs.seed={seed} -c model.model_kwargs.max_tokens={max_tokens} -c model.model_kwargs.timeout={timeout} --model {model} --subset {subset} --split {split} --workers {workers} --filter {task_filter} --output {output}"
   },
   "baseline": {
     "max_turns": 60,
