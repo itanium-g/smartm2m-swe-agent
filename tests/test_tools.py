@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -102,7 +103,12 @@ new file mode 100644
     assert not (repo / "src" / "other_module.py").exists()
 
 
-def test_container_test_path_records_infrastructure_failure_without_docker(tmp_path: Path):
+def test_container_test_path_records_infrastructure_failure_without_docker(monkeypatch, tmp_path: Path):
+    real_which = shutil.which
+    monkeypatch.setattr(
+        "smartm2m.tools.shutil.which",
+        lambda command: None if command == "docker" else real_which(command),
+    )
     repo = make_repo(tmp_path)
     task = TaskSpec(
         "synthetic__container-1",
