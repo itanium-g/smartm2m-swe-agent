@@ -1,3 +1,4 @@
+import os
 import subprocess
 from pathlib import Path
 
@@ -133,3 +134,30 @@ def test_command_history_preserves_stdout_and_stderr(tmp_path: Path):
     record = runner.command_records()[0]
     assert "stdout" in record["stdout"]
     assert "stderr" in record["stderr"]
+
+
+def test_container_daemon_socket_error_is_infrastructure_failure(monkeypatch, tmp_path: Path):
+    repo = make_repo(tmp_path)
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    docker = fake_bin / "docker"
+    docker.write_text(
+        "#!/bin/sh\n"
+        "echo 'docker: permission denied while trying to connect to the Docker daemon socket' >&2\n"
+        "exit 1\n",
+        encoding="utf-8",
+    )
+    docker.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{fake_bin}{os.pathsep}{os.environ['PATH']}")
+    task = TaskSpec(
+        "synthetic__daemon-1",
+        "Run in the task image.",
+        repo_path=str(repo),
+        image="docker.io/example/not-installed:latest",
+        test_commands=("python -m pytest -q",),
+    )
+
+    result = ToolRunner(repo, task).run_tests()
+
+    assert not result.ok
+    assert result.metadata["failure_class"] == "infra_failure"

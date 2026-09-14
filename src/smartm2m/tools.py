@@ -464,7 +464,14 @@ class ToolRunner:
             self._last_successful_test_command = command
         lower = output.lower()
         container_failure = self.container_image and returncode not in (None, 0) and any(
-            marker in lower for marker in ("cannot connect to the docker daemon", "is the docker daemon running")
+            marker in lower for marker in (
+                "cannot connect to the docker daemon",
+                "is the docker daemon running",
+                "docker daemon",
+                "error during connect",
+                "failed to dial",
+                "permission denied while trying to connect",
+            )
         )
         build_failure = any(marker in lower for marker in ("syntaxerror", "indentationerror", "modulenotfounderror", "importerror"))
         metadata = {
