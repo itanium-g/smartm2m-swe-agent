@@ -34,9 +34,9 @@ work is complete.
 4. **Time invested.** Fill the honest approximate human active hours and
    unattended benchmark elapsed time in `docs/time-and-scope.md`.
 
-5. **Public release.** Change `itanium-g/smartm2m-swe-agent` from private to
-   public before submission if repository administration is not authorized in
-   this workspace. Re-run the secret scan after the real run.
+5. **Post-run publication scan.** After any real primary run, re-run the secret
+   scan against the complete evidence bundle before committing new artifacts.
 
-6. **Submission.** Submit the final public repository URL to SMARTM2M. Work has
-   not performed an external submission.
+The repository visibility is now verified public. The assignment thread has
+already received one authorized submission; no additional email is required
+for this continuation.

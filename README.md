@@ -6,9 +6,11 @@ primary attempt budget. Tracks 1 and 2 are intentionally out of scope.
 
 ## Status at this checkout
 
-The implementation and frozen protocol are complete. No real SWE-bench score
-or lift is claimed yet: this Work environment has no Docker daemon and no
-`DEEPINFRA_API_KEY`, so a valid eight-task primary run could not be completed.
+Repository visibility is public at `itanium-g/smartm2m-swe-agent` (verified
+2026-09-14). The implementation and frozen protocol are complete. No real
+SWE-bench score or lift is claimed yet: this Work environment has no Docker
+daemon and no `DEEPINFRA_API_KEY`, so a valid eight-task primary run could not
+be completed.
 The synthetic `smartm2m smoke` result is plumbing evidence only.
 
 ## Frozen evaluation set

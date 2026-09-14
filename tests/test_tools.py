@@ -167,3 +167,47 @@ def test_container_daemon_socket_error_is_infrastructure_failure(monkeypatch, tm
 
     assert not result.ok
     assert result.metadata["failure_class"] == "infra_failure"
+
+
+def test_clean_replay_classifies_container_daemon_error_as_unavailable(monkeypatch, tmp_path: Path):
+    repo = make_repo(tmp_path)
+    patch = """diff --git a/src/maths.py b/src/maths.py
+--- a/src/maths.py
++++ b/src/maths.py
+@@ -1,2 +1,2 @@
+ def add(a, b):
+-    return a - b
++    return a + b
+"""
+    runner = ToolRunner(
+        repo,
+        TaskSpec(
+            "synthetic__replay-daemon-1",
+            "Fix addition.",
+            repo_path=str(repo),
+            image="docker.io/example/not-installed:latest",
+            test_commands=("python -m pytest -q",),
+        ),
+    )
+    assert runner.apply_patch(patch).ok
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    docker = fake_bin / "docker"
+    docker.write_text(
+        "#!/bin/sh\n"
+        "echo 'docker: permission denied while trying to connect to the Docker daemon socket' >&2\n"
+        "exit 1\n",
+        encoding="utf-8",
+    )
+    docker.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{fake_bin}{os.pathsep}{os.environ['PATH']}")
+
+    validation = validate_clean_replay(
+        repo,
+        "python -m pytest -q",
+        timeout_seconds=20,
+        container_image="docker.io/example/not-installed:latest",
+    )
+
+    assert validation.status == "unavailable"
+    assert validation.reason == "container runtime unavailable"

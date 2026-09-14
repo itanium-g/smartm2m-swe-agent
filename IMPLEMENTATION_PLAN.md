@@ -19,7 +19,7 @@ that is an explicit infrastructure state, not a fabricated score.
 | Official evaluator boundary | PASS | pinned SWE-bench subprocess and conservative parser |
 | Real paired score/lift | BLOCKED | Docker and `DEEPINFRA_API_KEY` unavailable here |
 | Evidence bundle | PARTIAL | synthetic smoke and infrastructure-probe evidence are retained; primary bundle awaits run |
-| Public repository | BLOCKED | repository remains private; see `MANUAL_ACTIONS.md` |
+| Public repository | PASS | GitHub visibility verified public at `itanium-g/smartm2m-swe-agent` |
 
 ## Reproduction contract
 

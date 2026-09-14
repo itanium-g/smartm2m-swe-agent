@@ -62,3 +62,38 @@ def test_build_failure_rolls_back_and_allows_repair(tmp_path: Path):
     assert "VALUE = 2" in result.patch
     assert result.model_requests == 6
     assert result.model_attempts == 6
+
+
+def test_controller_rejects_edit_before_successful_inspection(tmp_path: Path):
+    repo = _repo(tmp_path)
+    task = TaskSpec(
+        "synthetic__inspection-1",
+        "Make VALUE equal to 2.",
+        repo_path=str(repo),
+        test_commands=("python -m py_compile src/value.py",),
+    )
+    patch = """diff --git a/src/value.py b/src/value.py
+--- a/src/value.py
++++ b/src/value.py
+@@ -1 +1 @@
+-VALUE = 1
++VALUE = 2
+"""
+    model = ScriptedModel([
+        _response(1, "apply_patch", {"patch": patch}),
+        _response(2, "read_file", {"path": "src/value.py"}),
+        _response(3, "apply_patch", {"patch": patch}),
+        _response(4, "run_tests"),
+        _response(5, "submit_patch"),
+    ])
+    result = CustomAgent(model, arm=ArmConfig(max_turns=8, wall_time_seconds=60, command_timeout_seconds=20)).run(
+        task, ToolRunner(repo, task, command_timeout=20)
+    )
+
+    assert result.status == "submitted"
+    assert any(
+        event["kind"] == "tool_result"
+        and event["result"]["metadata"].get("error") == "inspection_required"
+        for event in result.events
+    )
+    assert "VALUE = 2" in result.patch

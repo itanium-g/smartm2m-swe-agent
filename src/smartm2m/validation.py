@@ -15,6 +15,17 @@ from typing import Any
 
 from .tools import ToolError, _docker_argv, _git_patch, validate_test_command
 
+_CONTAINER_FAILURE_MARKERS = (
+    "cannot connect to the docker daemon",
+    "is the docker daemon running",
+    "error during connect",
+    "error response from daemon",
+    "unable to find image",
+    "no such image",
+    "pull access denied",
+    "permission denied while trying to connect to the docker daemon",
+)
+
 
 def sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
@@ -25,6 +36,11 @@ def git_value(root: Path, *args: str) -> str:
     if proc.returncode != 0:
         raise ToolError(proc.stderr.strip() or f"git {' '.join(args)} failed")
     return proc.stdout.strip()
+
+
+def _container_runtime_failed(output: str) -> bool:
+    lowered = output.lower()
+    return any(marker in lowered for marker in _CONTAINER_FAILURE_MARKERS)
 
 
 @dataclass
@@ -141,8 +157,10 @@ def validate_clean_replay(
                     setup_commands,
                 )
             if prepared.returncode != 0:
+                setup_text = "\n".join(setup_output)
+                unavailable = bool(container_image) and _container_runtime_failed(setup_text)
                 return ValidationResult(
-                    "failed",
+                    "unavailable" if unavailable else "failed",
                     patch_hash,
                     command_hash,
                     base,
@@ -151,7 +169,7 @@ def validate_clean_replay(
                     False,
                     time.monotonic() - started,
                     "\n".join(setup_output)[-max_output_chars:],
-                    "setup command failed",
+                    "container runtime unavailable" if unavailable else "setup command failed",
                     setup_commands,
                 )
         timed_out = False
@@ -184,8 +202,10 @@ def validate_clean_replay(
             ])
             output += f"\n[timeout after {timeout_seconds}s]"
         duration = time.monotonic() - started
+        unavailable = bool(container_image) and _container_runtime_failed(output)
+        failed = returncode != 0 or timed_out
         return ValidationResult(
-            "passed" if returncode == 0 and not timed_out else "failed",
+            "unavailable" if unavailable else ("passed" if not failed else "failed"),
             patch_hash,
             command_hash,
             base,
@@ -194,7 +214,9 @@ def validate_clean_replay(
             timed_out,
             duration,
             output[-max_output_chars:],
-            "" if returncode == 0 and not timed_out else "visible test command failed",
+            "" if not failed and not unavailable else (
+                "container runtime unavailable" if unavailable else "visible test command failed"
+            ),
             setup_commands,
         )
 

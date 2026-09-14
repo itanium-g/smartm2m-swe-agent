@@ -21,8 +21,10 @@
 - [ ] Seal code/config/version/task/model hashes before generation; keep debug runs separate.
 - [ ] Review every reference and custom trajectory for contamination signals.
 - [ ] Fill the time-invested record with honest human active hours and unattended elapsed time.
-- [ ] Re-run the secret/publication scan on the final evidence bundle.
-- [ ] Make the repository public and submit its URL to SMARTM2M.
+- [ ] Re-run the secret/publication scan on the final evidence bundle after a
+      real primary run adds new artifacts.
+- [x] Repository visibility is public; the assignment thread received the one
+      authorized submission. No further email is required for this continuation.
 
 Do not replace a blocked task or present synthetic smoke output as the
 eight-task benchmark.

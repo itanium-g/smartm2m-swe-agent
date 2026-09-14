@@ -3,7 +3,7 @@
 # dependency versions below are the tested 2026-09-14 environment; keep this
 # file unchanged for the primary run and update it only with a new audit.
 mini-swe-agent @ git+https://github.com/SWE-agent/mini-swe-agent.git@a83fcae82d2a08f0ee0c688f9d137b3566c097f8
-swebench @ git+https://github.com/SWE-bench/SWE-bench.git@02e7a74ffd0b707aab73d203fe87bdc7c76afc8
+swebench @ git+https://github.com/SWE-bench/SWE-bench.git@02e7a74ffd0b707aab73d203fe87bdc7c76afc8e
 datasets==5.0.1
 docker==7.2.0
 ghapi==1.1.1

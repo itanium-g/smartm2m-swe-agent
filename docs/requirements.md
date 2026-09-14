@@ -22,5 +22,5 @@ requirement.
 | One-command reproduction | PASS | `smartm2m reproduce ...` |
 | README/design/limitations | PASS | top-level docs |
 | Time invested | PARTIAL | honest placeholder; user must fill hours |
-| Public repository | BLOCKED | visibility change is manual |
+| Public repository | PASS | GitHub visibility verified public at `itanium-g/smartm2m-swe-agent` |
 | Secret scan/publication prep | PARTIAL | local scan required again after real run |

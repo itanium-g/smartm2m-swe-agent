@@ -120,6 +120,7 @@ class CustomAgent:
         events: list[dict[str, Any]] = []
         seen: dict[str, int] = {}
         recovery_used = False
+        inspected = False
         observed_cost = 0.0
         cost_known = True
         prompt_tokens = 0
@@ -181,11 +182,21 @@ class CustomAgent:
 
             submitted = False
             for call in response.tool_calls:
-                result = runner.execute(call)
+                if call.name == "apply_patch" and not inspected:
+                    result = ToolResult(
+                        False,
+                        "inspection required before editing; use list_files, search, or read_file first",
+                        {"error": "inspection_required"},
+                    )
+                else:
+                    result = runner.execute(call)
                 events.append(_event("tool_result", turn=turns, tool_call_id=call.id, name=call.name, result={
                     "ok": result.ok, "content": result.content, "metadata": result.metadata,
                 }))
                 messages.append(_tool_message(call, result))
+
+                if result.ok and call.name in {"list_files", "search", "read_file"}:
+                    inspected = True
 
                 if call.name == "run_tests" and result.metadata.get("failure_class") == "build_failure":
                     if runner.checkpoints:
