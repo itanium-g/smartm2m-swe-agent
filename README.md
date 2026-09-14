@@ -35,12 +35,12 @@ evidence.
 2. Install the pinned reference and evaluator in isolated environments:
 
    ~~~bash
-   python -m pip install "mini-swe-agent==2.4.6"
-   python -m pip install "swebench"
+   python -m pip install -r requirements-evaluation.txt
    ~~~
 
    The reference arm invokes mini-extra swebench and does not import or
-   modify its agent code.
+   modify its agent code. The requirements file pins the recorded upstream
+   commits; verify the installed package metadata before the scored run.
 3. Run the preflight gate:
 
    ~~~bash
@@ -121,6 +121,7 @@ generation.
 | src/smartm2m/experiment.py | Preflight, run lifecycle, artifacts, audit |
 | src/smartm2m/smoke.py | No-key synthetic end-to-end verification |
 | configs/experiment.lock.yaml | Pinned experiment contract |
+| configs/reference-overrides.yaml | Configuration-only matched-budget overlay |
 | tasks/evaluation.json | Deliberately pending employer manifest |
 
 ## Limitations and scope cuts
