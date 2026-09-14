@@ -70,10 +70,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "evaluate":
             run_dir = Path(args.run_dir).resolve()
             prediction = run_dir / args.arm / "predictions.jsonl"
+            dataset_path = run_dir / "dataset-evaluation"
             result = OfficialEvaluator(config).run(
                 prediction,
                 f"{run_dir.name}-{args.arm}-reeval",
                 run_dir / "evaluation" / args.arm,
+                dataset_name=str(dataset_path) if dataset_path.is_dir() else None,
             )
             print(json.dumps(result.as_dict(), indent=2))
             return 0 if result.status == "completed" else 2

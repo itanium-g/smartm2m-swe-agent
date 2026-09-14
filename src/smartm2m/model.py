@@ -44,7 +44,8 @@ class OpenAICompatibleModel:
 
     def __init__(self, config: ModelConfig):
         self.config = config
-        self._request_number = 0
+        self.logical_requests = 0
+        self.request_attempts = 0
 
     def complete(
         self,
@@ -55,6 +56,7 @@ class OpenAICompatibleModel:
         seed: int | None,
         max_tokens: int,
     ) -> ModelResponse:
+        self.logical_requests += 1
         key = os.environ.get(self.config.api_key_env)
         if not key:
             raise ModelError(f"missing model credential environment variable: {self.config.api_key_env}")
@@ -83,7 +85,7 @@ class OpenAICompatibleModel:
         )
         last_error: Exception | None = None
         for attempt in range(self.config.max_retries + 1):
-            self._request_number += 1
+            self.request_attempts += 1
             try:
                 with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
                     decoded = json.loads(response.read().decode("utf-8"))
@@ -133,6 +135,8 @@ class ScriptedModel:
     def __init__(self, responses: Iterable[ModelResponse]):
         self.responses = iter(responses)
         self.calls = 0
+        self.logical_requests = 0
+        self.request_attempts = 0
 
     def complete(
         self,
@@ -145,6 +149,8 @@ class ScriptedModel:
     ) -> ModelResponse:
         del messages, tools, temperature, seed, max_tokens
         self.calls += 1
+        self.logical_requests += 1
+        self.request_attempts += 1
         try:
             return next(self.responses)
         except StopIteration as exc:

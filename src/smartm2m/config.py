@@ -9,7 +9,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import platform
 import shutil
+import sysconfig
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -69,8 +71,6 @@ class TaskSpec:
     setup_commands: tuple[str, ...] = ()
     split: str = "test"
     image: str = ""
-    fail_to_pass: tuple[str, ...] = ()
-    pass_to_pass: tuple[str, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
@@ -83,15 +83,18 @@ class TaskSpec:
         setup = _string_tuple(raw.get("setup_commands", []), "setup_commands")
         if not tests:
             raise ConfigError("test_commands must contain at least one trusted command")
-        hidden = {"patch", "test_patch", "hints_text", "FAIL_TO_PASS", "PASS_TO_PASS"}
-        leaked = sorted(hidden.intersection(raw))
+        hidden = {
+            "patch", "test_patch", "hints_text", "FAIL_TO_PASS", "PASS_TO_PASS",
+            "fail_to_pass", "pass_to_pass",
+        }
+        leaked = sorted(key for key in raw if str(key).lower() in {value.lower() for value in hidden})
         if leaked:
             raise ConfigError(
                 f"task {raw.get('instance_id', '<unknown>')} contains evaluator-only fields: {', '.join(leaked)}"
             )
         metadata = {k: v for k, v in raw.items() if k not in {
             "instance_id", "problem_statement", "repo", "base_commit", "repo_url", "repo_path",
-            "test_commands", "setup_commands", "split", "image", "fail_to_pass", "pass_to_pass", *hidden,
+            "test_commands", "setup_commands", "split", "image", *hidden,
         }}
         return cls(
             instance_id=str(raw["instance_id"]),
@@ -104,8 +107,6 @@ class TaskSpec:
             setup_commands=setup,
             split=str(raw.get("split", "test")),
             image=str(raw.get("image", "")),
-            fail_to_pass=_string_tuple(raw.get("fail_to_pass", []), "fail_to_pass"),
-            pass_to_pass=_string_tuple(raw.get("pass_to_pass", []), "pass_to_pass"),
             metadata=metadata,
         )
 
@@ -116,7 +117,13 @@ class TaskSpec:
             "problem_statement": self.problem_statement,
             "repo": self.repo,
             "base_commit": self.base_commit,
+            "repo_url": self.repo_url,
             "split": self.split,
+            "test_commands": list(self.test_commands),
+            "runtime": {
+                "container_image": self.image,
+                "test_profile": self.metadata.get("test_profile", "repository-native"),
+            },
         }
 
 
@@ -158,7 +165,11 @@ class ModelConfig:
 @dataclass(frozen=True)
 class ArmConfig:
     max_turns: int = 60
-    cost_limit_usd: float = 0.50
+    # Dollar limits are optional because provider pricing may be unavailable or
+    # endpoint-specific. Track 3 parity is enforced by the common turn and
+    # completion-token caps in the lock file; observed spend is reported when
+    # pricing is configured.
+    cost_limit_usd: float | None = None
     wall_time_seconds: int = 2700
     command_timeout_seconds: int = 120
     max_output_chars: int = 10000
@@ -167,7 +178,10 @@ class ArmConfig:
     def from_mapping(cls, raw: dict[str, Any]) -> "ArmConfig":
         return cls(
             max_turns=int(raw.get("max_turns", cls.max_turns)),
-            cost_limit_usd=float(raw.get("cost_limit_usd", cls.cost_limit_usd)),
+            cost_limit_usd=(
+                None if raw.get("cost_limit_usd", cls.cost_limit_usd) is None
+                else float(raw["cost_limit_usd"])
+            ),
             wall_time_seconds=int(raw.get("wall_time_seconds", cls.wall_time_seconds)),
             command_timeout_seconds=int(raw.get("command_timeout_seconds", cls.command_timeout_seconds)),
             max_output_chars=int(raw.get("max_output_chars", cls.max_output_chars)),
@@ -214,9 +228,10 @@ class ExperimentConfig:
     results_root: Path
     official_evaluator_command: str = ""
     dataset_name: str = "princeton-nlp/SWE-bench_Verified"
-    dataset_revision: str = ""
+    dataset_revision: str = "b316c349947c29963fce3f4a65967c9807a4b673"
     run_id_prefix: str = "smartm2m"
     config_path: Path = Path("experiment.lock.yaml")
+    manifest_source: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def load(cls, path: str | Path) -> "ExperimentConfig":
@@ -235,10 +250,13 @@ class ExperimentConfig:
         if not manifest_path.exists():
             raise ConfigError(f"manifest does not exist: {manifest_path}")
         manifest = load_data(manifest_path)
+        manifest_source: dict[str, Any] = {}
         if isinstance(manifest, list):
             task_values = manifest
         elif isinstance(manifest, dict):
             task_values = manifest.get("tasks", [])
+            if isinstance(manifest.get("source"), dict):
+                manifest_source = dict(manifest["source"])
         else:
             task_values = []
         if not isinstance(task_values, list):
@@ -260,6 +278,7 @@ class ExperimentConfig:
             dataset_revision=str(raw.get("dataset_revision", "")),
             run_id_prefix=str(raw.get("run_id_prefix", "smartm2m")),
             config_path=config_path,
+            manifest_source=manifest_source,
         )
 
     def validate_manifest(self, *, allow_unresolved: bool = False) -> list[str]:
@@ -273,8 +292,27 @@ class ExperimentConfig:
         if len(self.tasks) != self.expected_count:
             errors.append(f"manifest has {len(self.tasks)} tasks but expected_count is {self.expected_count}")
         for task in self.tasks:
-            if any(field in task.metadata for field in ("patch", "test_patch", "hints_text", "FAIL_TO_PASS", "PASS_TO_PASS")):
+            if any(str(field).lower() in {
+                "patch", "test_patch", "hints_text", "fail_to_pass", "pass_to_pass",
+            } for field in task.metadata):
                 errors.append(f"forbidden evaluator field leaked into metadata for {task.instance_id}")
+            if self.manifest_source and (not task.repo or not task.repo_url):
+                errors.append(f"{task.instance_id}: frozen manifest must include repo and repo_url")
+        if self.protocol_version.startswith("track3") and not self.dataset_revision:
+            errors.append("dataset_revision must be an immutable revision, not blank")
+        if self.manifest_source:
+            source_dataset = str(self.manifest_source.get("dataset_name", ""))
+            source_revision = str(self.manifest_source.get("dataset_revision", ""))
+            if source_dataset and source_dataset != self.dataset_name:
+                errors.append(f"manifest dataset_name {source_dataset!r} does not match lock {self.dataset_name!r}")
+            if source_revision and source_revision != self.dataset_revision:
+                errors.append("manifest dataset_revision does not match the lock file")
+            if self.manifest_source.get("selected_ids_sha256"):
+                selected_hash = sha256_bytes("\n".join(ids).encode("utf-8"))
+                if selected_hash != self.manifest_source["selected_ids_sha256"]:
+                    errors.append("frozen manifest ID order does not match selected_ids_sha256")
+        elif self.protocol_version.startswith("track3") and self.tasks and self.dataset_revision:
+            errors.append("frozen evaluation manifest must declare its dataset source and selection fingerprint")
         if errors and not allow_unresolved:
             raise ConfigError("manifest gate failed: " + "; ".join(errors))
         return errors
@@ -289,18 +327,28 @@ class ExperimentConfig:
             "reference": self.reference.__dict__,
             "custom": self.custom.__dict__,
             "baseline": self.baseline.__dict__,
+            "manifest_source": self.manifest_source,
         }
         return sha256_bytes(json.dumps(payload, sort_keys=True, default=str).encode())
 
 
 def command_exists(command: str) -> bool:
-    return shutil.which(command) is not None
+    if shutil.which(command) is not None:
+        return True
+    # ``pip install --user`` is common in the managed Work image, but its
+    # scripts directory is not always on PATH.  Discovering that directory
+    # keeps the reference check honest without hard-coding a machine path.
+    if not Path(command).is_absolute() or Path(command).parent == Path("."):
+        user_script = Path(sysconfig.get_path("scripts", scheme="posix_user")) / command
+        return user_script.is_file() and os.access(user_script, os.X_OK)
+    return False
 
 
 def environment_summary() -> dict[str, Any]:
     return {
         "python": os.sys.version,
         "platform": os.sys.platform,
+        "machine": platform.machine(),
         "docker": shutil.which("docker") or "",
         "git": shutil.which("git") or "",
     }

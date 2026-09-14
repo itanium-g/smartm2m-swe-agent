@@ -60,3 +60,5 @@ def test_build_failure_rolls_back_and_allows_repair(tmp_path: Path):
     assert result.status == "submitted"
     assert result.recovery_used
     assert "VALUE = 2" in result.patch
+    assert result.model_requests == 6
+    assert result.model_attempts == 6

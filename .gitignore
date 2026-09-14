@@ -6,8 +6,16 @@ __pycache__/
 dist/
 build/
 *.egg-info/
-results/*
-!results/.gitkeep
+# Keep primary run evidence (predictions, trajectories, command output, and
+# evaluator reports) reviewable in Git. Ignore only disposable or sensitive
+# material produced while reproducing a run.
+results/smoke/
+results/ci-smoke/
+results/*/workspaces/
+results/*/dataset-generation/
+results/*/dataset-evaluation/
+workspaces/
+.hf-cache/
 .env
 *.secret
 *.key

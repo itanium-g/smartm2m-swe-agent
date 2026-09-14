@@ -47,3 +47,29 @@ def test_uppercase_evaluator_fields_are_rejected():
             "problem_statement": "x",
             "FAIL_TO_PASS": ["secret"],
         })
+
+
+def test_lowercase_evaluator_fields_are_rejected():
+    with pytest.raises(ConfigError):
+        TaskSpec.from_mapping({
+            "instance_id": "synthetic__leak-2",
+            "problem_statement": "x",
+            "fail_to_pass": ["secret"],
+        })
+
+
+def test_generation_projection_contains_runtime_metadata_but_no_evaluator_fields():
+    task = TaskSpec(
+        "synthetic__projection-1",
+        "Fix the behavior.",
+        repo="owner/repo",
+        repo_url="https://github.com/owner/repo.git",
+        base_commit="abc123",
+        image="docker.io/example/task:latest",
+        metadata={"test_profile": "pytest"},
+    )
+    payload = generation_payload(task)
+    serialized = str(payload)
+    for field in ("patch", "test_patch", "hints_text", "FAIL_TO_PASS", "PASS_TO_PASS"):
+        assert field not in serialized
+    assert payload["runtime"]["container_image"] == "docker.io/example/task:latest"

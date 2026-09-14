@@ -43,10 +43,16 @@ def _evaluation_value(record: dict[str, Any]) -> tuple[bool, str]:
     if isinstance(nested, dict):
         fail = nested.get("FAIL_TO_PASS", nested.get("fail_to_pass"))
         keep = nested.get("PASS_TO_PASS", nested.get("pass_to_pass"))
-        if isinstance(fail, dict):
-            fail = all(_bool(value) is True for value in fail.values())
-        if isinstance(keep, dict):
-            keep = all(_bool(value) is True for value in keep.values())
+        def section_ok(value: Any) -> bool | None:
+            if isinstance(value, dict) and isinstance(value.get("failure"), list):
+                successes = value.get("success", [])
+                return isinstance(successes, list) and not value["failure"] and bool(successes)
+            if isinstance(value, dict):
+                parsed = [_bool(item) for item in value.values()]
+                return all(item is True for item in parsed) if parsed else None
+            return _bool(value)
+        fail = section_ok(fail)
+        keep = section_ok(keep)
         if fail is not None and keep is not None:
             ok = bool(fail) and bool(keep)
             return ok, "" if ok else "FAIL_TO_PASS or PASS_TO_PASS failed"
@@ -210,16 +216,17 @@ def write_summary(path: str | Path, summary: dict[str, Any]) -> None:
         f"({summary.get('custom_resolved', 0)}/{summary.get('expected_count', 0)})",
         f"- Lift: **{summary.get('lift_percentage_points', 0)} percentage points**",
         "",
-        "| Instance | Reference | Custom | Reference generation | Custom generation | Reason |",
-        "|---|---:|---:|---|---|---|",
+        "| Instance | Reference resolved | Custom resolved | Reference status | Custom status | Reference patch | Custom patch | Notes |",
+        "|---|---:|---:|---|---|---|---|---|",
     ]
     for instance_id in sorted(set(baseline) | set(custom)):
         b, c = baseline.get(instance_id, {}), custom.get(instance_id, {})
         reason = str(c.get("reason") or b.get("reason") or "").replace("|", "\\|")
         lines.append(
             f"| {instance_id} | {'yes' if b.get('resolved') else 'no'} | "
-            f"{'yes' if c.get('resolved') else 'no'} | {b.get('generation_status', 'missing')} | "
-            f"{c.get('generation_status', 'missing')} | {reason} |"
+            f"{'yes' if c.get('resolved') else 'no'} | {b.get('evaluation_status', 'not_evaluated')} | "
+            f"{c.get('evaluation_status', 'not_evaluated')} | {b.get('patch_sha256', '')} | "
+            f"{c.get('patch_sha256', '')} | {reason} |"
         )
     lines.extend([
         "",

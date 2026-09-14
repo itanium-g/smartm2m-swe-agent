@@ -8,6 +8,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import sysconfig
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -34,6 +35,28 @@ class ReferenceRun:
 
 def _task_filter(tasks: tuple[TaskSpec, ...]) -> str:
     return "^(?:" + "|".join(re.escape(task.instance_id) for task in tasks) + ")$"
+
+
+def _redacted_result(result: ReferenceRun) -> dict[str, Any]:
+    payload = result.as_dict()
+    for field in ("stdout", "stderr", "reason"):
+        payload[field] = re.sub(
+            r"(?i)(authorization\s*:\s*bearer\s+|api[_-]?key\s*[=:]\s*|token\s*[=:]\s*)[^\s\"']+",
+            r"\1[REDACTED]",
+            str(payload.get(field, "")),
+        )
+    return payload
+
+
+def _resolve_executable(executable: str) -> str:
+    """Resolve a user-installed console script without changing its code."""
+    found = shutil.which(executable)
+    if found:
+        return found
+    candidate = Path(sysconfig.get_path("scripts", scheme="posix_user")) / executable
+    if candidate.is_file() and candidate.stat().st_mode & 0o111:
+        return str(candidate)
+    return executable
 
 
 class ReferenceRunner:
@@ -66,14 +89,15 @@ class ReferenceRunner:
         environment["MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT"] = str(self.config.model.max_retries + 1)
         return environment
 
-    def command(self, output_dir: Path) -> list[str]:
+    def command(self, output_dir: Path, *, dataset_path: str | None = None) -> list[str]:
         reference = self.config.reference
         output_dir.mkdir(parents=True, exist_ok=True)
         reference_config = self._reference_config_path()
+        subset = dataset_path or reference.subset
         if reference.command_template:
             rendered = reference.command_template.format(
                 model=self.config.model.model,
-                subset=reference.subset,
+                subset=subset,
                 split=reference.split,
                 workers=reference.workers,
                 base_url=self.config.model.base_url,
@@ -91,7 +115,7 @@ class ReferenceRunner:
             reference.executable,
             "swebench",
             "--model", self.config.model.model,
-            "--subset", reference.subset,
+            "--subset", subset,
             "--split", reference.split,
             "--workers", str(reference.workers),
             "--filter", _task_filter(self.config.tasks),
@@ -101,21 +125,33 @@ class ReferenceRunner:
             command.extend(["--config", reference_config])
         return command
 
-    def run(self, output_dir: str | Path, *, dry_run: bool = False) -> ReferenceRun:
+    def run(
+        self,
+        output_dir: str | Path,
+        *,
+        dry_run: bool = False,
+        dataset_path: str | None = None,
+    ) -> ReferenceRun:
         destination = Path(output_dir).resolve()
         destination.mkdir(parents=True, exist_ok=True)
-        command = self.command(destination)
+        command = self.command(destination, dataset_path=dataset_path)
         if dry_run:
             return ReferenceRun(
                 "dry_run", command, None, 0.0, "", "", str(destination),
                 working_directory=str(destination),
             )
-        if shutil.which(command[0]) is None:
-            return ReferenceRun(
+        executable = _resolve_executable(command[0])
+        command[0] = executable
+        if not Path(executable).is_absolute() and shutil.which(executable) is None:
+            result = ReferenceRun(
                 "unavailable", command, None, 0.0, "", "", str(destination),
                 f"executable not found: {command[0]}",
                 str(destination),
             )
+            (destination / "reference-run.json").write_text(
+                json.dumps(_redacted_result(result), indent=2) + "\n", encoding="utf-8"
+            )
+            return result
         started = time.monotonic()
         try:
             proc = subprocess.run(
@@ -143,21 +179,25 @@ class ReferenceRunner:
                 str(destination),
             )
             (destination / "reference-run.json").write_text(
-                json.dumps(result.as_dict(), indent=2) + "\n", encoding="utf-8"
+                json.dumps(_redacted_result(result), indent=2) + "\n", encoding="utf-8"
             )
             return result
         except OSError as exc:
-            return ReferenceRun(
+            result = ReferenceRun(
                 "error", command, None, time.monotonic() - started, "", str(exc),
                 str(destination), str(exc), str(destination),
             )
+            (destination / "reference-run.json").write_text(
+                json.dumps(_redacted_result(result), indent=2) + "\n", encoding="utf-8"
+            )
+            return result
         status = "completed" if proc.returncode == 0 else "failed"
         result = ReferenceRun(
             status, command, proc.returncode, time.monotonic() - started,
             proc.stdout, proc.stderr, str(destination), working_directory=str(destination),
         )
         (destination / "reference-run.json").write_text(
-            json.dumps(result.as_dict(), indent=2) + "\n", encoding="utf-8"
+            json.dumps(_redacted_result(result), indent=2) + "\n", encoding="utf-8"
         )
         return result
 

@@ -5,17 +5,26 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import platform
 import re
 import shutil
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from .agent import AgentResult, CustomAgent
-from .config import ConfigError, ExperimentConfig, environment_summary
+from .config import ConfigError, ExperimentConfig, command_exists, environment_summary
+from .dataset import materialize_pinned_dataset
 from .evaluator import OfficialEvaluator, write_predictions
 from .model import OpenAICompatibleModel
-from .reference import ReferenceRunner, find_prediction_file, load_prediction_rows
+from .reference import (
+    ReferenceRunner,
+    _redacted_result,
+    _resolve_executable,
+    find_prediction_file,
+    load_prediction_rows,
+)
 from .reporting import (
     hash_result_bundle,
     load_records,
@@ -81,7 +90,7 @@ def preflight(config: ExperimentConfig, *, allow_unresolved: bool = False) -> di
         "unresolved_manifest_errors": unresolved_issues,
     }
     if not config.tasks:
-        warnings.append("no runnable tasks are present; provide the employer-confirmed fixed manifest")
+        warnings.append("no frozen tasks are present; the Track 3 denominator is empty")
     for task in config.tasks:
         if not task.base_commit:
             errors.append(f"{task.instance_id}: base_commit is required for a reproducible run")
@@ -89,10 +98,49 @@ def preflight(config: ExperimentConfig, *, allow_unresolved: bool = False) -> di
             errors.append(f"{task.instance_id}: repo_path does not exist: {task.repo_path}")
         if not task.repo_path and not task.repo_url:
             errors.append(f"{task.instance_id}: no local repo_path/repo_url")
-    if shutil.which(config.reference.executable) is None:
+    if not command_exists(config.reference.executable):
         warnings.append(f"reference executable is not installed: {config.reference.executable}")
+    elif config.protocol_version.startswith("track3"):
+        version_command = [_resolve_executable(config.reference.executable), "--version"]
+        try:
+            version_probe = subprocess.run(
+                version_command,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                timeout=30,
+                check=False,
+            )
+            version_output = version_probe.stdout.strip()
+            checks["reference_version_output"] = _redact(version_output)
+            expected = config.reference.version
+            if version_probe.returncode != 0 or expected not in version_output:
+                errors.append(
+                    f"reference version mismatch: expected {expected}, observed {version_output or '<none>'}"
+                )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            errors.append(f"could not verify reference version {config.reference.version}: {exc}")
+    if any(task.image for task in config.tasks) and shutil.which("docker") is None:
+        warnings.append("Docker is unavailable; official SWE-bench container execution is blocked in this environment")
+    elif any(task.image for task in config.tasks):
+        try:
+            docker_probe = subprocess.run(
+                ["docker", "info", "--format", "{{.ServerVersion}}"],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                timeout=10,
+                check=False,
+            )
+            checks["docker_server_version"] = docker_probe.stdout.strip()
+            if docker_probe.returncode != 0:
+                warnings.append("Docker CLI is present but the daemon is unavailable")
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            warnings.append(f"Docker daemon preflight failed: {exc}")
+    if any(task.image for task in config.tasks) and platform.machine().lower() not in {"x86_64", "amd64"}:
+        warnings.append(f"official SWE-bench images are x86_64; host architecture is {platform.machine()}")
     if config.model.input_usd_per_million is None or config.model.output_usd_per_million is None:
-        warnings.append("model pricing is incomplete; observed API spend and cost-limit parity cannot be verified")
+        warnings.append("provider pricing is unset; parity uses the locked turn/token caps and observed spend is reported as unknown")
     if not os.environ.get(config.model.api_key_env):
         warnings.append(
             f"model key is not set ({config.model.api_key_env}); generation will record provider_error"
@@ -109,7 +157,7 @@ def _write_agent_artifacts(
     task: Any,
 ) -> None:
     directory.mkdir(parents=True, exist_ok=True)
-    _json_write(directory / "agent.json", result.as_dict())
+    _json_write(directory / "agent.json", _redact_json(result.as_dict()))
     _json_write(directory / "trajectory.json", {
         "instance_id": task.instance_id,
         "events": _redact_json(result.events),
@@ -135,6 +183,7 @@ def _custom_generation(config: ExperimentConfig, run_dir: Path) -> list[dict[str
                     task,
                     command_timeout=config.custom.command_timeout_seconds,
                     max_output_chars=config.custom.max_output_chars,
+                    container_image=task.image,
                 )
                 result = CustomAgent(
                     model,
@@ -146,9 +195,10 @@ def _custom_generation(config: ExperimentConfig, run_dir: Path) -> list[dict[str
                 if result.patch and result.status == "submitted":
                     validation = validate_clean_replay(
                         workspace,
-                        task.test_commands[0],
+                        result.last_successful_test_command or task.test_commands[0],
                         timeout_seconds=config.custom.command_timeout_seconds,
                         setup_commands=task.setup_commands,
+                        container_image=task.image,
                     )
                     write_validation(instance_dir / "validation.json", validation)
                 row = result.as_dict()
@@ -166,7 +216,11 @@ def _custom_generation(config: ExperimentConfig, run_dir: Path) -> list[dict[str
                 "reason": str(exc),
                 "turns": 0,
                 "model_requests": 0,
+                "model_attempts": 0,
                 "estimated_cost_usd": None,
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
                 "patch_sha256": hashlib.sha256(b"").hexdigest(),
                 "model_patch": "",
                 "validation_status": "not_run",
@@ -200,13 +254,31 @@ def _reference_generation(config: ExperimentConfig, run_dir: Path, result: Any) 
         value = rows_by_id.get(task.instance_id, {})
         raw_patch = value.get("model_patch", value.get("patch", ""))
         patch = "" if raw_patch is None else str(raw_patch)
+        if patch:
+            generation_status = "submitted"
+            generation_reason = ""
+        elif value:
+            generation_status = "empty_patch"
+            generation_reason = str(
+                value.get("reason")
+                or value.get("error")
+                or value.get("exit_status")
+                or "reference produced an empty patch"
+            )
+        else:
+            generation_status = "missing_prediction"
+            generation_reason = result.reason or "reference produced no prediction row"
         rows.append({
             "instance_id": task.instance_id,
-            "status": "submitted" if patch else result.status,
-            "reason": result.reason if not patch else "",
+            "status": generation_status,
+            "reason": generation_reason,
             "turns": None,
             "model_requests": None,
+            "model_attempts": None,
             "estimated_cost_usd": None,
+            "prompt_tokens": None,
+            "completion_tokens": None,
+            "total_tokens": None,
             "patch_sha256": hashlib.sha256(patch.encode()).hexdigest(),
             "model_patch": patch,
             "validation_status": "not_applicable_reference",
@@ -246,7 +318,7 @@ def reproduce(
     if not checks["ok"]:
         raise ConfigError("preflight failed: " + "; ".join(checks["errors"]))
     if not config.tasks:
-        raise ConfigError("no runnable tasks are present; fill tasks/evaluation.json before reproduce")
+        raise ConfigError("no frozen tasks are present; validate tasks/evaluation.json before reproduce")
     selected_run_id = run_id or _utc_run_id(config.run_id_prefix)
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", selected_run_id):
         raise ConfigError("run_id must contain only letters, numbers, '.', '_' or '-' and be at most 128 characters")
@@ -262,6 +334,8 @@ def reproduce(
         "config_sha256": hashlib.sha256(config.config_path.read_bytes()).hexdigest(),
         "manifest_sha256": hashlib.sha256(config.manifest_path.read_bytes()).hexdigest(),
         "expected_count": config.expected_count,
+        "dataset_name": config.dataset_name,
+        "dataset_revision": config.dataset_revision,
         "tasks": [task.generation_projection() for task in config.tasks],
         "model": config.model.__dict__,
         "reference": config.reference.__dict__,
@@ -271,11 +345,20 @@ def reproduce(
     shutil.copy2(config.config_path, run_dir / "configs" / config.config_path.name)
     shutil.copy2(config.manifest_path, run_dir / "configs" / config.manifest_path.name)
 
+    generation_dataset = None
+    if config.protocol_version.startswith("track3"):
+        generation_dataset = materialize_pinned_dataset(
+            config,
+            run_dir / "dataset-generation",
+            evaluator_only=False,
+        )
+        _json_write(run_dir / "dataset-generation.json", generation_dataset.as_dict())
     reference_result = ReferenceRunner(config).run(
         run_dir / "reference",
         dry_run=dry_run_reference,
+        dataset_path=generation_dataset.path if generation_dataset else None,
     )
-    _json_write(run_dir / "reference" / "run.json", reference_result.as_dict())
+    _json_write(run_dir / "reference" / "run.json", _redacted_result(reference_result))
     _reference_generation(config, run_dir, reference_result)
     custom_rows = _custom_generation(config, run_dir)
     usage_rows = [
@@ -283,6 +366,10 @@ def reproduce(
             "arm": "custom",
             "instance_id": row.get("instance_id"),
             "model_requests": row.get("model_requests"),
+            "model_attempts": row.get("model_attempts"),
+            "prompt_tokens": row.get("prompt_tokens"),
+            "completion_tokens": row.get("completion_tokens"),
+            "total_tokens": row.get("total_tokens"),
             "estimated_cost_usd": row.get("estimated_cost_usd"),
         }
         for row in custom_rows
@@ -291,26 +378,71 @@ def reproduce(
         "\n".join(json.dumps(row, ensure_ascii=False) for row in usage_rows) + "\n",
         encoding="utf-8",
     )
-    (run_dir / "contamination.md").write_text(
-        "# Contamination review\n\n"
-        "Primary generation artifacts are retained under reference/ and custom/. "
-        "Complete the post-sealing trajectory review before publishing benchmark claims. "
-        "The current run does not infer that a patch difference proves absence of memorization.\n",
-        encoding="utf-8",
-    )
+    contamination_lines = [
+        "# Contamination review",
+        "",
+        "This review is post-sealing: no gold patch, test patch, hint, or evaluator label is used during generation.",
+        "The heuristic below is a review worksheet; final classification requires human judgment.",
+        "",
+        "| Instance | Reference category | Custom category | Evidence note |",
+        "|---|---|---|---|",
+    ]
+    for task in config.tasks:
+        contamination_lines.append(f"| {task.instance_id} | inconclusive | inconclusive | Review retained trajectories under reference/ and custom/. |")
+    contamination_lines.extend([
+        "",
+        "Categories: no specific memorization signal; suspected memorization; confirmed procedural exposure; inconclusive.",
+    ])
+    (run_dir / "contamination.md").write_text("\n".join(contamination_lines) + "\n", encoding="utf-8")
 
+    # The full dataset is intentionally fetched only after both arms have
+    # sealed predictions.  It is consumed solely by the official evaluator.
+    evaluator_dataset = None
+    evaluator_dataset_error = ""
+    if config.protocol_version.startswith("track3"):
+        try:
+            evaluator_dataset = materialize_pinned_dataset(
+                config,
+                run_dir / "dataset-evaluation",
+                evaluator_only=True,
+            )
+            _json_write(run_dir / "dataset-evaluation.json", evaluator_dataset.as_dict())
+        except ConfigError as exc:
+            evaluator_dataset_error = str(exc)
+            _json_write(run_dir / "dataset-evaluation.json", {
+                "status": "unavailable",
+                "reason": evaluator_dataset_error,
+                "dataset_name": config.dataset_name,
+                "dataset_revision": config.dataset_revision,
+            })
     evaluator = OfficialEvaluator(config)
     evaluation = run_dir / "evaluation"
-    evaluator.run(
-        run_dir / "reference" / "predictions.jsonl",
-        f"{run_dir.name}-reference",
-        evaluation / "reference",
-    )
-    evaluator.run(
-        run_dir / "custom" / "predictions.jsonl",
-        f"{run_dir.name}-custom",
-        evaluation / "custom",
-    )
+    if evaluator_dataset_error:
+        for arm in ("reference", "custom"):
+            _json_write(evaluation / arm / "evaluation-run.json", {
+                "status": "unavailable",
+                "command": [],
+                "returncode": None,
+                "duration_seconds": 0.0,
+                "stdout": "",
+                "stderr": "",
+                "run_id": f"{run_dir.name}-{arm}",
+                "reason": evaluator_dataset_error,
+                "working_directory": str((evaluation / arm).resolve()),
+            })
+    else:
+        evaluator.run(
+            run_dir / "reference" / "predictions.jsonl",
+            f"{run_dir.name}-reference",
+            evaluation / "reference",
+            dataset_name=evaluator_dataset.path if evaluator_dataset else None,
+        )
+        evaluator.run(
+            run_dir / "custom" / "predictions.jsonl",
+            f"{run_dir.name}-custom",
+            evaluation / "custom",
+            dataset_name=evaluator_dataset.path if evaluator_dataset else None,
+        )
     summary = audit_run(run_dir, config)
     _json_write(run_dir / "run.json", {
         "run_id": run_dir.name,

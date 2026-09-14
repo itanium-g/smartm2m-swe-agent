@@ -1,89 +1,85 @@
 # Track 3 design
 
-## Built system
+## Architecture
 
-The repository now contains a small Python experiment runner with two isolated
-arms:
+The repository has one locked experiment runner and two isolated arms.
 
-1. Reference: invokes the shipped mini-swe-agent batch runner at the configured
-   version. The reference source, prompts, parser, and agent are not imported
-   or modified.
-2. Custom: runs a separate sequential controller around the same
-   OpenAI-compatible model route. It exposes bounded repository tools, records
-   every action, executes trusted visible tests, and seals a patch only after
-   clean-base replay validation.
-
-The experiment runner creates one fresh workspace and trajectory per task,
-preserves empty/failing predictions, runs the official evaluator only after
-both arms are sealed, and produces a conservative paired report. The offline
-smoke command exercises the same controller, patch capture, clean replay,
-artifact, and reporting path on a synthetic fixture.
-
-~~~mermaid
+```mermaid
 flowchart TD
-    LOCK[Experiment lock and fixed manifest] --> BASE[Unmodified mini-swe-agent]
-    LOCK --> CUSTOM[Custom controller]
-    BASE --> SEALED[Sealed predictions]
-    CUSTOM --> SEALED
-    SEALED --> EVAL[Official evaluator in fresh runs]
-    EVAL --> REPORT[Paired report and checksums]
-~~~
+    LOCK["lock + frozen safe manifest"] --> REF["stock mini-swe-agent"]
+    LOCK --> CUSTOM["SMARTM2M controller"]
+    REF --> PRED["sealed predictions"]
+    CUSTOM --> PRED
+    PRED --> EVAL["official SWE-bench evaluator"]
+    EVAL --> REPORT["paired report + checksums"]
+```
 
-## Why this design
+The reference arm is launched as an external `mini-extra swebench` process.
+Only configuration overlays set the common model, endpoint, decoding values,
+step cap, task filter, output path, and timeout. The custom arm uses the same
+OpenAI-compatible model route and exposes a small typed tool surface:
+repository listing/search/read, source-only unified patching, bounded test
+execution, diff inspection, rollback, and patch submission.
 
-The strongest low-cost opportunity in the brief is not a larger prompt; it is
-reliable feedback and accounting. The custom arm therefore focuses on:
+Each task starts from its recorded base commit. The official SWE-bench x86_64
+image is attached to the custom test/validation commands, so the custom arm
+does not silently test against the host when an image is declared. Source
+inspection and Git patch operations stay on the disposable checkout. The
+reference remains responsible for its own official container lifecycle.
 
-- search and file identification before editing;
-- source-only unified patches;
-- a trusted allowlist of test commands;
-- observed return codes instead of model claims;
-- a checkpoint before each edit;
-- automatic rollback for syntax/import/build failures;
-- one bounded recovery from repeated action/workspace states; and
-- patch identity tied to a clean validation replay.
+## Intervention rationale
 
-This keeps the causal difference between the arms legible. The model,
-temperature, seed, maximum completion tokens, retry policy, wall-time limit,
-nominal cost limit, task set, and official evaluator are intended to be
-identical between arms. The custom controller's extra test-gating and recovery
-are the measured intervention.
+The measured change is a reliability controller around the same model, not a
+larger prompt or another model. It adds evidence and recovery that the
+assignment specifically requests:
 
-## Data boundary
+- inspect before editing and keep edits source-only;
+- require an observed zero-return-code test after the latest patch;
+- checkpoint before edits and roll back once after build failures;
+- detect repeated action/workspace states and permit one strategy reset;
+- bind the sealed patch to its latest successful test and a clean-base replay;
+- record all command output, return codes, timeouts, patch hashes, and usage.
 
-Only the instance ID, issue statement, repository identity/base commit, and
-trusted operational metadata reach generation. Evaluator-only fields such as
-patch, test_patch, hints_text, FAIL_TO_PASS, and PASS_TO_PASS are not in the
-generation payload. Official reports are read only after prediction files are
-sealed. The controller never receives a gold patch or hidden test result.
+The agent can choose a targeted repository-native test command for debugging,
+but command validation rejects shell composition, expansion, traversal, and
+non-test/system-management entry points. Official resolution is never inferred
+from that visible test; it comes only from the evaluator after predictions are
+sealed.
 
-## Known limitations
+## Data and contamination boundary
 
-- The complete employer task manifest is missing from the supplied PDF, so no
-  benchmark number is reported until the exact fixed IDs and pins are filled.
-- The default hosted route is configurable and its backend weights are not
-  provably immutable. A requested seed is recorded but cannot guarantee
-  deterministic hosted output.
-- Docker/SWE-bench image preparation and the official harness are external
-  prerequisites. Their failures are recorded as infrastructure failures, not
-  converted into agent successes.
-- The mini-swe-agent command is an integration boundary; its installation and
-  exact output layout must be verified during preflight on the evaluation host.
-- One attempt per task and approximately eight instances provide limited
-  statistical precision. Paired gains/losses are more informative than a
-  broad superiority claim.
-- Automatic build rollback uses the latest task checkpoint and is intentionally
-  conservative; a semantic test failure is returned to the model for repair
-  rather than being assumed to be a broken build.
+The pinned dataset is used twice with separate responsibilities. Hydration
+copies only instance ID, issue text, repository/base identity, image, and safe
+test profile into `tasks/evaluation.json`. Gold `patch`, `test_patch`,
+`hints_text`, `FAIL_TO_PASS`, and `PASS_TO_PASS` are not accepted by
+`TaskSpec.from_mapping` and are recursively checked out of the generation
+projection. The evaluator receives the hidden dataset data only after both
+prediction files are sealed.
 
-## Next steps before submission
+The eight IDs are selected from all 50 pool IDs using a fixed seed before any
+agent run. Failures cannot trigger reselection. After sealing, trajectories are
+reviewed for evidence-driven debugging versus suspicious exact solution
+knowledge; suspicious tasks remain in the headline denominator.
 
-1. Obtain the employer-authorized task manifest and replace the pending
-   placeholder without changing the denominator.
-2. Freeze the dataset revision, base commits, image digests, model metadata,
-   prices, dependency lock, prompt hashes, and evaluator revision.
-3. Run an isolated mini-swe-agent smoke task, then the paired primary run.
-4. Inspect every trajectory for accidental solution exposure or memorization
-   signals and publish the assessment without removing flagged tasks.
-5. Publish the repository and durable redacted result bundle; report losses,
-   blocked tasks, actual costs, and scope reductions.
+## Reproducibility and budget
+
+The lock records the dataset revision, selection fingerprint, model, endpoint,
+seed, temperature, completion-token limit, turn/step limit, wall policy,
+mini-swe-agent commit, evaluator commit, and one-attempt protocol. DeepInfra
+pricing is not hard-coded because an unset or changing provider price would
+make a nominal dollar cap false. Both arms therefore use the matched 60-step/
+turn and 8,192-token-call caps; token usage and known cost are reported
+separately.
+
+## Limitations and next steps
+
+The Work environment used for this audit has no Docker daemon and no provider
+credential, so it cannot produce a valid primary score. The exact command and
+manual prerequisites are recorded in `MANUAL_ACTIONS.md`. A compatible
+x86_64 Docker host should run the primary command, preserve the complete
+bundle, and then receive a human contamination review. The hosted API may not
+honor seed determinism; no stronger claim is made.
+
+No web UI, database, vector retrieval, multi-agent orchestration, model
+training, alternate provider, repeated-attempt aggregation, Track 1, or Track
+2 work was included.

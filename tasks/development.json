@@ -1,5 +1,5 @@
 {
   "status": "synthetic-only",
   "tasks": [],
-  "note": "The offline smoke command creates and destroys a disposable synthetic git repository. Keep development fixtures disjoint from the employer evaluation IDs."
+  "note": "The offline smoke command creates and destroys a disposable synthetic git repository. Keep development fixtures disjoint from the frozen eight-task evaluation IDs."
 }

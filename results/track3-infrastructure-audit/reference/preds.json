@@ -1,0 +1,7 @@
+{
+  "sphinx-doc__sphinx-8551": {
+    "model_name_or_path": "openai/gpt-oss-120b",
+    "instance_id": "sphinx-doc__sphinx-8551",
+    "model_patch": ""
+  }
+}

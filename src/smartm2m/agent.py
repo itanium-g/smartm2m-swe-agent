@@ -19,12 +19,11 @@ from .protocol import ModelClient, ModelResponse, ToolCall
 from .task import generation_payload
 from .tools import ToolResult, ToolRunner, tool_schemas
 
-
 SYSTEM_PROMPT = """You are the SMARTM2M Track 3 custom software-engineering agent.
 Solve the issue in the supplied repository using the available typed tools.
 Inspect before editing. Make the smallest general source-only change that fixes
-the issue. Do not edit tests, build files, configuration, logs, or generated
-artifacts. Reproduce the failure when practical, run a declared test command
+the issue. Do not edit tests, build files, configuration, logs, or generated artifacts.
+Reproduce the failure when practical, run a declared or bounded targeted test command
 after edits, inspect the diff, and call submit_patch only after the actual test
 result supports the patch. Never claim that a test passed without observing a
 tool result with a zero exit status. If a patch breaks import/syntax/build,
@@ -40,13 +39,18 @@ class AgentResult:
     reason: str
     turns: int
     model_requests: int
+    model_attempts: int
     estimated_cost_usd: float | None
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
     patch: str
     patch_sha256: str
     events: list[dict[str, Any]] = field(default_factory=list)
     commands: list[dict[str, Any]] = field(default_factory=list)
     recovery_used: bool = False
     validation_required: bool = True
+    last_successful_test_command: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -55,10 +59,15 @@ class AgentResult:
             "reason": self.reason,
             "turns": self.turns,
             "model_requests": self.model_requests,
+            "model_attempts": self.model_attempts,
             "estimated_cost_usd": self.estimated_cost_usd,
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "total_tokens": self.total_tokens,
             "patch_sha256": self.patch_sha256,
             "recovery_used": self.recovery_used,
             "validation_required": self.validation_required,
+            "last_successful_test_command": self.last_successful_test_command,
         }
 
 
@@ -111,8 +120,14 @@ class CustomAgent:
         events: list[dict[str, Any]] = []
         seen: dict[str, int] = {}
         recovery_used = False
-        total_cost: float | None = 0.0
+        observed_cost = 0.0
+        cost_known = True
+        prompt_tokens = 0
+        completion_tokens = 0
+        total_tokens = 0
         turns = 0
+        logical_requests_before = int(getattr(self.model, "logical_requests", 0))
+        request_attempts_before = int(getattr(self.model, "request_attempts", logical_requests_before))
         status = "provider_error"
         reason = "agent did not reach a terminal submission"
         started = time.monotonic()
@@ -135,14 +150,17 @@ class CustomAgent:
                 status, reason = "provider_error", str(exc)
                 break
             usage = response.usage
+            prompt_tokens += usage.prompt_tokens
+            completion_tokens += usage.completion_tokens
+            total_tokens += usage.total_tokens
             if usage.estimated_cost_usd is not None:
-                total_cost = (total_cost or 0.0) + usage.estimated_cost_usd
-                if total_cost > self.arm.cost_limit_usd:
-                    events.append(_event("budget_exhausted", cost_usd=total_cost, limit_usd=self.arm.cost_limit_usd))
+                observed_cost += usage.estimated_cost_usd
+                if self.arm.cost_limit_usd is not None and observed_cost > self.arm.cost_limit_usd:
+                    events.append(_event("budget_exhausted", cost_usd=observed_cost, limit_usd=self.arm.cost_limit_usd))
                     status, reason = "budget_exhausted", "observed model usage exceeded episode cost limit"
                     break
-            elif total_cost == 0.0:
-                total_cost = None
+            else:
+                cost_known = False
             events.append(
                 _event(
                     "model_response",
@@ -223,17 +241,26 @@ class CustomAgent:
         except Exception:
             patch = ""
         patch_hash = hashlib.sha256(patch.encode("utf-8")).hexdigest()
+        model_requests = int(getattr(self.model, "logical_requests", logical_requests_before + turns)) - logical_requests_before
+        model_attempts = int(
+            getattr(self.model, "request_attempts", request_attempts_before + model_requests)
+        ) - request_attempts_before
         return AgentResult(
             task.instance_id,
             status,
             reason,
             turns,
-            getattr(self.model, "calls", turns),
-            total_cost,
+            model_requests,
+            model_attempts,
+            observed_cost if cost_known else None,
+            prompt_tokens,
+            completion_tokens,
+            total_tokens,
             patch,
             patch_hash,
             events,
             runner.command_records(),
             recovery_used,
             True,
+            runner.last_successful_test_command(),
         )

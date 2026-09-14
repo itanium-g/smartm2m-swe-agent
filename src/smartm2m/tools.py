@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
-import re
+import shlex
 import shutil
 import subprocess
 import time
@@ -36,6 +36,9 @@ class CommandRecord:
     timed_out: bool = False
     signal: int | None = None
     output_chars: int = 0
+    container_image: str = ""
+    stdout: str = ""
+    stderr: str = ""
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -46,6 +49,9 @@ class CommandRecord:
             "timed_out": self.timed_out,
             "signal": self.signal,
             "output_chars": self.output_chars,
+            "container_image": self.container_image,
+            "stdout": self.stdout,
+            "stderr": self.stderr,
         }
 
 
@@ -111,11 +117,16 @@ def _validate_patch_paths(patch: str) -> None:
             raise ToolError("build/configuration files are outside the generation edit boundary")
 
 
-def _git_patch(root: Path) -> str:
+def _git_tracked_patch(root: Path) -> str:
     tracked = _run_git(root, ["diff", "--binary", "--no-ext-diff", "HEAD"])
     if tracked.returncode not in (0, 1):
         raise ToolError(f"could not capture git diff: {tracked.stderr.strip()}")
-    chunks = [tracked.stdout]
+    return tracked.stdout
+
+
+def _git_patch(root: Path) -> str:
+    """Capture tracked and ordinary untracked source changes."""
+    chunks = [_git_tracked_patch(root)]
     untracked = _run_git(root, ["ls-files", "--others", "--exclude-standard", "-z"])
     if untracked.returncode != 0:
         raise ToolError(f"could not list untracked files: {untracked.stderr.strip()}")
@@ -123,7 +134,9 @@ def _git_patch(root: Path) -> str:
         if not raw:
             continue
         path = _safe_relative(root, raw)
-        if path.is_symlink() or not path.is_file():
+        if path.is_symlink():
+            raise ToolError(f"symlink changes are not supported: {raw}")
+        if not path.is_file():
             continue
         diff = subprocess.run(
             ["git", "diff", "--no-index", "--binary", "/dev/null", "--", raw],
@@ -137,19 +150,107 @@ def _git_patch(root: Path) -> str:
     return "".join(chunks)
 
 
+_DYNAMIC_TEST_RUNNERS = {
+    "pytest", "py.test", "tox", "nox", "python", "python3", "go", "cargo",
+    "npm", "mvn", "gradle", "dotnet", "mix", "ruby", "php",
+}
+
+
+def _has_unquoted_shell_control(command: str) -> bool:
+    quote = ""
+    escaped = False
+    for char in command:
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\" and quote != "'":
+            escaped = True
+            continue
+        if char in {"'", '"'}:
+            if not quote:
+                quote = char
+            elif quote == char:
+                quote = ""
+            continue
+        if not quote and (char in ";|<>\n\r`" or char == "&"):
+            return True
+    return bool(quote)
+
+
+def validate_test_command(command: str, *, declared: bool = False) -> None:
+    """Validate a bounded repository-test command before shell execution.
+
+    Declared commands come from the frozen safe manifest. Model-selected
+    commands still need to be useful for debugging, but are limited to common
+    test runners and cannot contain shell composition, redirection, traversal,
+    or package/system-management commands.
+    """
+    if not isinstance(command, str) or not command.strip() or len(command) > 1000:
+        raise ToolError("test command must be a non-empty string no longer than 1000 characters")
+    if (_has_unquoted_shell_control(command) or "$(" in command or "${" in command or "`" in command):
+        raise ToolError("test command cannot contain shell control operators or expansion")
+    try:
+        tokens = shlex.split(command)
+    except ValueError as exc:
+        raise ToolError(f"test command has invalid quoting: {exc}") from exc
+    if not tokens:
+        raise ToolError("test command is empty")
+    if any(token == ".." or token.startswith("../") or "/../" in token for token in tokens):
+        raise ToolError("test command cannot traverse outside the task workspace")
+    if declared:
+        return
+    executable = Path(tokens[0]).name
+    if executable not in _DYNAMIC_TEST_RUNNERS:
+        raise ToolError("model-selected commands must start with a supported repository test runner")
+    if executable in {"python", "python3"}:
+        if len(tokens) >= 2 and tokens[1] == "-c":
+            raise ToolError("model-selected Python commands cannot execute inline code")
+        is_module = len(tokens) >= 3 and tokens[1] == "-m" and tokens[2] in {"pytest", "unittest"}
+        is_repo_runner = len(tokens) >= 2 and (
+            tokens[1].endswith(".py") and not Path(tokens[1]).is_absolute()
+        )
+        if not (is_module or is_repo_runner):
+            raise ToolError("Python test commands must use pytest/unittest or a repository test script")
+    if executable in {"npm", "mvn", "gradle", "dotnet", "cargo", "go", "mix"} and len(tokens) < 2:
+        raise ToolError("test runner command is missing its test action")
+
+
+def _docker_argv(root: Path, image: str, command: str) -> list[str]:
+    if not image or image.startswith("-") or any(char.isspace() for char in image):
+        raise ToolError("container image must be a simple image reference")
+    return [
+        # SWE-bench's pinned evaluator and mini-swe-agent Docker environment
+        # use Docker's default network mode. Match that task environment;
+        # command safety comes from the typed runner and container boundary.
+        "docker", "run", "--rm", "--init",
+        "--volume", f"{root}:/testbed", "--workdir", "/testbed",
+        "--env", "CI=1", "--env", "PAGER=cat", image, "bash", "-lc", command,
+    ]
+
+
 class ToolRunner:
     """Execute only narrow operations inside one task-owned workspace."""
 
-    def __init__(self, root: str | Path, task: TaskSpec, *, command_timeout: int = 120, max_output_chars: int = 10000):
+    def __init__(
+        self,
+        root: str | Path,
+        task: TaskSpec,
+        *,
+        command_timeout: int = 120,
+        max_output_chars: int = 10000,
+        container_image: str | None = None,
+    ):
         self.root = Path(root).resolve()
         self.task = task
         self.command_timeout = command_timeout
         self.max_output_chars = max_output_chars
         self.checkpoints: list[Checkpoint] = []
         self.commands: list[CommandRecord] = []
+        self.container_image = container_image or task.image
         self.submitted = False
         self.last_patch_error: str | None = None
         self._last_test_patch_sha256: str | None = None
+        self._last_successful_test_command: str | None = None
         if not self.root.is_dir():
             raise ToolError(f"task workspace does not exist: {self.root}")
 
@@ -235,7 +336,9 @@ class ToolRunner:
         return ToolResult(True, selected, {"path": path, "start_line": start, "end_line": end})
 
     def _checkpoint(self) -> None:
-        tracked = _git_patch(self.root)
+        # Keep untracked files separate: applying an untracked-file diff and
+        # restoring its bytes would otherwise restore the same file twice.
+        tracked = _git_tracked_patch(self.root)
         untracked: dict[str, bytes] = {}
         listing = _run_git(self.root, ["ls-files", "--others", "--exclude-standard", "-z"])
         if listing.returncode != 0:
@@ -263,14 +366,20 @@ class ToolRunner:
         if applied.returncode != 0:
             self.last_patch_error = applied.stderr.strip() or applied.stdout.strip()
             return ToolResult(False, f"patch application failed: {self.last_patch_error}", {"error": "patch_apply_failed"})
+        for value in _patch_paths(patch):
+            if (self.root / value).is_symlink():
+                self.rollback()
+                raise ToolError(f"symlink changes are not supported: {value}")
         check = _run_git(self.root, ["diff", "--check"])
         if check.returncode != 0:
             self._last_test_patch_sha256 = None
             return ToolResult(False, f"patch has whitespace errors: {check.stdout or check.stderr}", {"error": "diff_check_failed"})
         self._last_test_patch_sha256 = None
+        self._last_successful_test_command = None
         return ToolResult(True, f"applied patch to {len(set(_patch_paths(patch)))} file(s)", {"paths": _patch_paths(patch)})
 
     def run_tests(self, command: str = "default", timeout_seconds: int | None = None) -> ToolResult:
+        declared = True
         if command == "default":
             command = self.task.test_commands[0]
         elif command.startswith("command_") and command[8:].isdigit():
@@ -279,47 +388,100 @@ class ToolRunner:
                 command = self.task.test_commands[index]
             except IndexError as exc:
                 raise ToolError(f"unknown declared test command: {command}") from exc
-        if command not in self.task.test_commands:
-            raise ToolError("run_tests only accepts an exact command from the trusted task manifest")
+        elif command not in self.task.test_commands:
+            declared = False
+        validate_test_command(command, declared=declared)
         timeout = self.command_timeout if timeout_seconds is None else max(1, min(int(timeout_seconds), self.command_timeout))
         started = time.monotonic()
         timed_out = False
+        execution_command = command
+        argv: list[str] | str = command
+        returncode: int | None = None
+        output = ""
+        stdout = ""
+        stderr = ""
+        should_execute = True
+        if self.container_image:
+            if shutil.which("docker") is None:
+                output = f"[container runtime unavailable: docker is not installed; image={self.container_image}]"
+                stdout = output
+                metadata_failure = "infra_failure"
+                should_execute = False
+            else:
+                argv = _docker_argv(self.root, self.container_image, command)
+                execution_command = " ".join(shlex.quote(value) for value in argv)
+                metadata_failure = ""
+        else:
+            metadata_failure = ""
         try:
-            proc = subprocess.run(
-                command,
-                cwd=self.root,
-                shell=True,
-                text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                timeout=timeout,
-                check=False,
-                env={**os.environ, "PAGER": "cat", "CI": "1"},
-            )
-            returncode: int | None = proc.returncode
-            output = proc.stdout or ""
+            if should_execute:
+                proc = subprocess.run(
+                    argv,
+                    cwd=self.root,
+                    shell=isinstance(argv, str),
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=timeout,
+                    check=False,
+                    env={**os.environ, "PAGER": "cat", "CI": "1"},
+                )
+                returncode = proc.returncode
+                stdout = proc.stdout or ""
+                stderr = proc.stderr or ""
+                output = stdout
+                if stderr:
+                    output += f"\n[stderr]\n{stderr}"
         except subprocess.TimeoutExpired as exc:
             timed_out = True
             returncode = None
-            output = (exc.stdout or "") if isinstance(exc.stdout, str) else ""
+            stdout = exc.stdout if isinstance(exc.stdout, str) else ""
+            stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+            output = stdout
+            if stderr:
+                output += f"\n[stderr]\n{stderr}"
             output += f"\n[timeout after {timeout}s]"
         duration = time.monotonic() - started
         full_chars = len(output)
         visible = output[-self.max_output_chars :] if full_chars > self.max_output_chars else output
-        record = CommandRecord(command, returncode, output, duration, timed_out, None, full_chars)
+        signal = -returncode if returncode is not None and returncode < 0 else None
+        record = CommandRecord(
+            command,
+            returncode,
+            output,
+            duration,
+            timed_out,
+            signal,
+            full_chars,
+            self.container_image,
+            stdout,
+            stderr,
+        )
         self.commands.append(record)
         current_patch_sha256 = hashlib.sha256(_git_patch(self.root).encode()).hexdigest()
         self._last_test_patch_sha256 = current_patch_sha256 if returncode == 0 and not timed_out else None
+        if self._last_test_patch_sha256:
+            self._last_successful_test_command = command
         lower = output.lower()
+        container_failure = self.container_image and returncode not in (None, 0) and any(
+            marker in lower for marker in ("cannot connect to the docker daemon", "is the docker daemon running")
+        )
         build_failure = any(marker in lower for marker in ("syntaxerror", "indentationerror", "modulenotfounderror", "importerror"))
         metadata = {
             "command": command,
+            "executed_command": execution_command,
             "returncode": returncode,
+            "signal": signal,
             "duration_seconds": duration,
             "timed_out": timed_out,
             "output_chars": full_chars,
             "truncated": full_chars > self.max_output_chars,
-            "failure_class": "build_failure" if build_failure else ("test_failure" if returncode else "pass"),
+            "failure_class": metadata_failure or (
+                "infra_failure" if container_failure else
+                ("timeout" if timed_out else
+                ("build_failure" if build_failure else ("test_failure" if returncode else "pass"))
+                )
+            ),
         }
         return ToolResult(returncode == 0 and not timed_out, visible, metadata)
 
@@ -335,6 +497,14 @@ class ToolRunner:
                 False,
                 "no source changes were found",
                 {"patch_sha256": patch_sha256, "has_changes": False, "error": "empty_patch"},
+            )
+        try:
+            _validate_patch_paths(patch)
+        except ToolError as exc:
+            return ToolResult(
+                False,
+                f"source-only patch validation failed: {exc}",
+                {"patch_sha256": patch_sha256, "has_changes": True, "error": "unsafe_patch"},
             )
         if self._last_test_patch_sha256 != patch_sha256:
             return ToolResult(
@@ -356,6 +526,11 @@ class ToolRunner:
         reset = _run_git(self.root, ["reset", "--hard", "HEAD"])
         if reset.returncode != 0:
             raise ToolError(reset.stderr.strip() or "git reset failed during rollback")
+        # The task workspace is disposable; remove ignored test/build output
+        # too so a rollback cannot leave a stale artifact affecting evidence.
+        cleaned = _run_git(self.root, ["clean", "-fdx"])
+        if cleaned.returncode != 0:
+            raise ToolError(cleaned.stderr.strip() or "git clean failed during rollback")
         current = _run_git(self.root, ["ls-files", "--others", "--exclude-standard", "-z"])
         for raw in current.stdout.split("\0"):
             if not raw:
@@ -372,6 +547,7 @@ class ToolRunner:
             if apply.returncode != 0:
                 raise ToolError(apply.stderr.strip() or "could not restore checkpoint patch")
         self._last_test_patch_sha256 = None
+        self._last_successful_test_command = None
         return ToolResult(True, "restored the latest checkpoint", {"patch_sha256": hashlib.sha256(_git_patch(self.root).encode()).hexdigest()})
 
     def state_hash(self) -> str:
@@ -382,6 +558,9 @@ class ToolRunner:
     def command_records(self) -> list[dict[str, Any]]:
         return [record.as_dict() for record in self.commands]
 
+    def last_successful_test_command(self) -> str | None:
+        return self._last_successful_test_command
+
 
 def tool_schemas(task: TaskSpec) -> list[dict[str, Any]]:
     commands = ["default", *[f"command_{i}" for i in range(len(task.test_commands))]]
@@ -390,7 +569,7 @@ def tool_schemas(task: TaskSpec) -> list[dict[str, Any]]:
         {"type": "function", "function": {"name": "search", "description": "Search repository text for a symbol, error, or behavior.", "parameters": {"type": "object", "properties": {"query": {"type": "string"}, "path": {"type": "string"}, "max_results": {"type": "integer"}}, "required": ["query"]}}},
         {"type": "function", "function": {"name": "read_file", "description": "Read a bounded range from a source file.", "parameters": {"type": "object", "properties": {"path": {"type": "string"}, "start_line": {"type": "integer"}, "end_line": {"type": "integer"}}, "required": ["path"]}}},
         {"type": "function", "function": {"name": "apply_patch", "description": "Apply a unified diff to non-test source files. Inspect first and keep the patch minimal.", "parameters": {"type": "object", "properties": {"patch": {"type": "string"}}, "required": ["patch"]}}},
-        {"type": "function", "function": {"name": "run_tests", "description": "Run a trusted test command. Declared commands: " + ", ".join(commands), "parameters": {"type": "object", "properties": {"command": {"type": "string", "enum": commands}, "timeout_seconds": {"type": "integer"}}, "required": []}}},
+        {"type": "function", "function": {"name": "run_tests", "description": "Run a bounded repository-native test command. Use a declared alias (" + ", ".join(commands) + ") or a targeted pytest/unittest/Django test command; shell composition and destructive commands are rejected.", "parameters": {"type": "object", "properties": {"command": {"type": "string"}, "timeout_seconds": {"type": "integer"}}, "required": []}}},
         {"type": "function", "function": {"name": "get_diff", "description": "Inspect the current source diff before submitting.", "parameters": {"type": "object", "properties": {}, "required": []}}},
         {"type": "function", "function": {"name": "rollback", "description": "Restore the latest pre-edit checkpoint after a broken patch or recovery decision.", "parameters": {"type": "object", "properties": {}, "required": []}}},
         {"type": "function", "function": {"name": "submit_patch", "description": "Seal the current patch for clean replay validation after all checks pass.", "parameters": {"type": "object", "properties": {}, "required": []}}},

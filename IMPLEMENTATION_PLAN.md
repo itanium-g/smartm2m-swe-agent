@@ -1,64 +1,41 @@
-# SMARTM2M Track 3 implementation plan and completion record
+# SMARTM2M Track 3 implementation and audit record
 
-Updated 2026-09-14. The planned executable slice is implemented; the scored
-benchmark run remains gated on the employer's complete fixed task manifest and
-the evaluation environment.
+Updated 2026-09-14. The repository now contains the submission-ready
+implementation and a frozen eight-task protocol. The real headline benchmark
+remains unrun because this Work environment lacks Docker and a provider key;
+that is an explicit infrastructure state, not a fabricated score.
 
-## Delivered
+## Acceptance status
 
-| Area | Implemented evidence |
-|---|---|
-| Custom agent | src/smartm2m/agent.py |
-| Safe tool interface | src/smartm2m/tools.py |
-| Provider transport | src/smartm2m/model.py |
-| Reference integration | src/smartm2m/reference.py |
-| Clean validation | src/smartm2m/validation.py |
-| Official evaluator boundary | src/smartm2m/evaluator.py |
-| Paired reporting/audit | src/smartm2m/reporting.py and experiment.py |
-| Reproducibility | lock config, manifest hashes, run artifacts, checksums |
-| End-to-end verification | smartm2m smoke; synthetic custom-only resolution |
-| CI | compile, smoke, and unit-test workflow |
-
-## Acceptance gates
-
-- G00 manifest gate: implemented, intentionally fails the placeholder
-  evaluation manifest until eight employer-confirmed IDs are supplied.
-- G01 generation projection: implemented; forbidden evaluator fields are
-  rejected and never placed in the custom prompt.
-- G02 matched settings: model, seed, decoding, retry, and budget settings are
-  represented in the lock and run manifest; live provider support still needs
-  host preflight.
-- G03 baseline integrity: implemented as a subprocess call to mini-extra
-  swebench; the unmodified package must be installed at the declared version.
-- G04 validation gate: implemented with actual trusted command output and
-  clean-base patch replay.
-- G05 recovery gate: implemented with pre-edit checkpoints, build rollback,
-  and repeated-state recovery; covered by controller tests.
-- G06 evaluation evidence: implemented as a post-sealing official evaluator
-  boundary and parser/report input contract.
-- G07 paired score: implemented with fixed denominator arithmetic and explicit
-  missing/unresolved statuses.
-- G08 packaging: implemented with top-level commands, artifacts, checksums,
-  design, scope record, and CI.
-
-## Deliberate non-goals
-
-No Track 1 or Track 2 implementation, model training, web UI, database,
-multi-agent planner, vector retrieval, second provider, or production service
-was added. These would consume time without improving the required causal
-comparison before the task manifest and primary evidence exist.
+| Gate | Status | Evidence |
+|---|---|---|
+| Track 3 only | PASS | `README.md`, lock protocol, no Track 1/2 code |
+| Eight IDs frozen | PASS | `tasks/evaluation.json`, selection fingerprint |
+| Deterministic Mini selection | PASS | `scripts/select_verified_mini.py`, seed 42, 50-ID pool |
+| Safe manifest hydration | PASS | `scripts/hydrate_manifest.py`, hidden-field rejection/tests |
+| Same model/meaningful budget | PASS | locked model/endpoint/temperature/seed/tokens/60 steps |
+| Stock reference boundary | PASS | pinned `mini-extra` subprocess, no vendored edits |
+| Custom recovery/validation | PASS | typed tools, checkpoints, rollback, loop detection, clean replay |
+| Official evaluator boundary | PASS | pinned SWE-bench subprocess and conservative parser |
+| Real paired score/lift | BLOCKED | Docker and `DEEPINFRA_API_KEY` unavailable here |
+| Evidence bundle | PARTIAL | synthetic smoke and infrastructure-probe evidence are retained; primary bundle awaits run |
+| Public repository | BLOCKED | repository remains private; see `MANUAL_ACTIONS.md` |
 
 ## Reproduction contract
 
-After filling tasks/evaluation.json:
-
-~~~bash
+```bash
 python -m pip install -e ".[dev]"
-python -m pip install "mini-swe-agent==2.4.6" "swebench"
-smartm2m preflight --config configs/experiment.lock.yaml
-DEEPINFRA_API_KEY=... smartm2m reproduce --config configs/experiment.lock.yaml --run-id track3-primary
-smartm2m audit --config configs/experiment.lock.yaml --run-dir results/track3-primary
-~~~
+python -m pip install -r requirements-evaluation.txt
+export DEEPINFRA_API_KEY="..."
+smartm2m reproduce --config configs/experiment.lock.yaml --run-id track3-primary
+```
 
-The run must be performed only after the final protocol/configuration is
-frozen. Do not substitute the PDF's three examples for the missing fixed list.
+The command must be run on a compatible x86_64 Linux/Docker host when the
+current environment cannot provide the official images. It does not replace
+the frozen IDs or change the denominator after a failure.
+
+## Scope cuts
+
+Track 3 only; one model/provider; one stock reference; eight fixed tasks;
+pass@1; no UI, training, database, vector store, alternate provider,
+multi-agent architecture, or Tracks 1/2.

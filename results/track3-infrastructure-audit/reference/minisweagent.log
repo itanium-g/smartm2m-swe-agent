@@ -1,0 +1,22 @@
+2026-09-14 15:03:37,226 - minisweagent - INFO - Loading dataset /tmp/smartm2m-generation-dataset-audit, split test...
+2026-09-14 15:03:37,512 - minisweagent - INFO - Instance filter: 50 -> 1 instances
+2026-09-14 15:03:37,513 - minisweagent - INFO - Running on 1 instances...
+2026-09-14 15:03:37,514 - minisweagent - INFO - Building agent config from specs: ['swebench.yaml', 'configs/reference-overrides.yaml', 'model.model_kwargs.api_base=https://api.deepinfra.com/v1', 'model.model_kwargs.temperature=0.0', 'model.model_kwargs.seed=42', 'model.model_kwargs.max_tokens=8192', 'model.model_kwargs.timeout=120']
+2026-09-14 15:03:47,064 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-53b8d1eb -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8551:latest sleep 2h
+2026-09-14 15:03:47,067 - minisweagent - ERROR - Error processing instance sphinx-doc__sphinx-8551: [Errno 2] No such file or directory: 'docker'
+Traceback (most recent call last):
+  File "/root/.local/lib/python3.12/site-packages/minisweagent/run/benchmarks/swebench.py", line 146, in process_instance
+    env = get_sb_environment(config, instance)
+  File "/root/.local/lib/python3.12/site-packages/minisweagent/run/benchmarks/swebench.py", line 88, in get_sb_environment
+    env = get_environment(env_config)
+  File "/root/.local/lib/python3.12/site-packages/minisweagent/environments/__init__.py", line 33, in get_environment
+    return get_environment_class(environment_class)(**config)
+  File "/root/.local/lib/python3.12/site-packages/minisweagent/environments/docker.py", line 59, in __init__
+    self._start_container()
+  File "/root/.local/lib/python3.12/site-packages/minisweagent/environments/docker.py", line 91, in _start_container
+    result = subprocess.run(
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 1026, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'docker'

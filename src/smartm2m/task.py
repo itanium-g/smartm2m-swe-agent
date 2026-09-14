@@ -29,18 +29,37 @@ def _git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["git", *args], cwd=root, text=True, capture_output=True, check=False)
 
 
-def _run_setup(root: Path, commands: tuple[str, ...]) -> None:
+def _run_setup(root: Path, commands: tuple[str, ...], image: str = "") -> None:
     for command in commands:
-        result = subprocess.run(
-            command,
-            cwd=root,
-            shell=True,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            env={**os.environ, "CI": "1", "PAGER": "cat"},
-            check=False,
-        )
+        if image:
+            if shutil.which("docker") is None:
+                raise RuntimeError(f"container runtime unavailable for task image {image}")
+            if image.startswith("-") or any(char.isspace() for char in image):
+                raise RuntimeError("task image is not a valid simple image reference")
+            argv = [
+                "docker", "run", "--rm", "--init",
+                "--volume", f"{root}:/testbed", "--workdir", "/testbed",
+                "--env", "CI=1", "--env", "PAGER=cat", image, "bash", "-lc", command,
+            ]
+            result = subprocess.run(
+                argv,
+                cwd=root,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+        else:
+            result = subprocess.run(
+                command,
+                cwd=root,
+                shell=True,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env={**os.environ, "CI": "1", "PAGER": "cat"},
+                check=False,
+            )
         if result.returncode != 0:
             raise RuntimeError(f"setup command failed ({result.returncode}): {command}\n{result.stdout[-4000:]}")
 
@@ -97,7 +116,7 @@ def prepared_workspace(task: TaskSpec, parent: str | Path) -> Iterator[Path]:
 
         if task.base_commit:
             _checkout_clean_base(destination, task.base_commit)
-        _run_setup(destination, task.setup_commands)
+        _run_setup(destination, task.setup_commands, task.image)
         yield destination
     finally:
         shutil.rmtree(destination, ignore_errors=True)

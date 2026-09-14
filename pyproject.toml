@@ -13,7 +13,9 @@ authors = [{name = "Ghiffari Ahmadijaya"}]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+# Keep the local/CI quality gate versions reproducible alongside the benchmark
+# dependency pins in requirements-evaluation.txt.
+dev = ["pytest==9.1.1", "ruff==0.16.7"]
 
 [project.scripts]
 smartm2m = "smartm2m.cli:main"
@@ -34,3 +36,4 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+ignore = ["E501", "UP022", "UP035", "UP037"]

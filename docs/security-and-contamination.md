@@ -21,8 +21,9 @@ accepted as test evidence. The official evaluator receives a sealed standard
 prediction file in a separate run.
 
 The custom agent may not edit tests, delete tests, suppress collection, alter
-expected outputs, or use hidden evaluator fields. Setup/test commands come
-from the trusted manifest.
+expected outputs, or use hidden evaluator fields. Setup commands come from the
+trusted manifest; visible tests may use a bounded repository-native runner,
+with shell composition and destructive commands rejected.
 
 ## Leakage controls
 

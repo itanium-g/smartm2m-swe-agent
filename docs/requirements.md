@@ -1,30 +1,26 @@
 # Assignment requirements and evidence
 
-This table distinguishes implemented plumbing from evidence that requires the
-employer's missing fixed task list and a live evaluation environment.
+This is the audit matrix for the supplied SMARTM2M PDF. “Blocked” means an
+external prerequisite is absent, not that the repository silently skips the
+requirement.
 
-| ID | Requirement | Current evidence | State |
-|---|---|---|---|
-| R01 | Select and execute at least one track | Track 3 selected; controller implemented | done |
-| R02 | Beat the same-model reference | Paired runner and report arithmetic | benchmark pending |
-| R03 | Pin a model/API | Lock fields and redacted run manifest | live pin pending |
-| R04 | Use the fixed approximately eight IDs | Strict manifest gate; placeholder has zero tasks | blocked until manifest |
-| R05 | FAIL_TO_PASS and PASS_TO_PASS resolution | Official evaluator boundary; no inferred score | benchmark pending |
-| R06 | Run unmodified mini-swe-agent | mini-extra subprocess wrapper | runtime verification pending |
-| R07 | Identify files, edit, test, and remediate | Typed custom tools and controller | implemented |
-| R08 | Validate by executed tests | Clean-base replay bound to patch hash | implemented |
-| R09 | Recover broken builds/loops | Checkpoint, rollback, repeated-state recovery | implemented |
-| R10 | Per-task/overall reference vs custom rate and lift | Offline paired reporter | implemented |
-| R11 | Diffs and test output for both arms | Artifact layout and prediction files | implemented |
-| R12 | Contamination/memorization disclosure | Policy and per-run note path | implemented |
-| R13 | Versions and seeds pinned | Lock and manifest fields | live support pending |
-| R14 | Public git repository and exact commands | README and reproducible CLI | repository publication pending |
-| R15 | One command regenerates both numbers | smartm2m reproduce | implemented |
-| R16 | Configurable hosted endpoint and audit logs | OpenAI-compatible URL and redacted artifacts | implemented |
-| R17 | Short design document | DESIGN.md | implemented |
-| R18 | Actual time and scope reductions | docs/time-and-scope.md | active minutes pending |
-| R19 | Cite resources used | docs/assignment/README.md | implemented |
-
-The current repository makes no positive benchmark or lift claim. This is
-deliberate: an honest partial result is preferred by the brief to an invented
-task list or score.
+| Requirement | State | Evidence |
+|---|---|---|
+| Track 3 implementation | PASS | custom controller and paired runner |
+| Exactly eight frozen tasks | PASS | frozen manifest and selection hash |
+| Verified Mini pool/revision | PASS | committed 50 IDs and HF revision |
+| No evaluator-field leakage | PASS | hydration allowlist/projection/tests |
+| Same model and meaningful budget | PASS | lock and reference overlay |
+| Unmodified mini-swe-agent | PASS | external pinned subprocess |
+| Actual repository test execution | PASS | bounded commands, container image path, logs |
+| Build/loop recovery | PASS | checkpoint, rollback, repeated-state tests |
+| Official evaluator | PASS | pinned SWE-bench subprocess/parser fixture |
+| Per-task/overall/lift report | PASS | `reporting.py` and generated table |
+| Real reference/custom numbers | BLOCKED | Docker and provider secret unavailable in Work |
+| Reference/custom full logs | PARTIAL | code retains them; no primary run yet |
+| Contamination review | PARTIAL | worksheet/heuristics; human review remains |
+| One-command reproduction | PASS | `smartm2m reproduce ...` |
+| README/design/limitations | PASS | top-level docs |
+| Time invested | PARTIAL | honest placeholder; user must fill hours |
+| Public repository | BLOCKED | visibility change is manual |
+| Secret scan/publication prep | PARTIAL | local scan required again after real run |

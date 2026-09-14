@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import time
@@ -12,7 +13,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from .tools import ToolError, _git_patch
+from .tools import ToolError, _docker_argv, _git_patch, validate_test_command
 
 
 def sha256_text(value: str) -> str:
@@ -65,6 +66,7 @@ def validate_clean_replay(
     timeout_seconds: int = 120,
     max_output_chars: int = 20000,
     setup_commands: tuple[str, ...] = (),
+    container_image: str = "",
 ) -> ValidationResult:
     workspace = Path(root).resolve()
     patch = capture_patch(workspace)
@@ -73,6 +75,15 @@ def validate_clean_replay(
     base = git_value(workspace, "rev-parse", "HEAD")
     if not patch:
         return ValidationResult("invalid", patch_hash, command_hash, base, command, None, False, 0.0, "", "empty patch")
+    try:
+        validate_test_command(command, declared=True)
+    except ToolError as exc:
+        return ValidationResult("invalid", patch_hash, command_hash, base, command, None, False, 0.0, str(exc), str(exc), setup_commands)
+    if container_image and shutil.which("docker") is None:
+        return ValidationResult(
+            "unavailable", patch_hash, command_hash, base, command, None, False, 0.0,
+            f"docker is not installed for {container_image}", "container runtime unavailable", setup_commands,
+        )
     with tempfile.TemporaryDirectory(prefix="smartm2m-validate-") as temp:
         clean = Path(temp)
         _fresh_base(workspace, clean)
@@ -93,10 +104,16 @@ def validate_clean_replay(
         setup_output: list[str] = []
         for setup in setup_commands:
             try:
+                if container_image:
+                    prepared_argv: list[str] | str = _docker_argv(clean, container_image, setup)
+                    prepared_shell = False
+                else:
+                    prepared_argv = setup
+                    prepared_shell = True
                 prepared = subprocess.run(
-                    setup,
+                    prepared_argv,
                     cwd=clean,
-                    shell=True,
+                    shell=prepared_shell,
                     text=True,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
@@ -139,10 +156,16 @@ def validate_clean_replay(
                 )
         timed_out = False
         try:
+            if container_image:
+                test_argv: list[str] | str = _docker_argv(clean, container_image, command)
+                test_shell = False
+            else:
+                test_argv = command
+                test_shell = True
             tested = subprocess.run(
-                command,
+                test_argv,
                 cwd=clean,
-                shell=True,
+                shell=test_shell,
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,

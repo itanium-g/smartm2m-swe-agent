@@ -1,138 +1,143 @@
-# SMARTM2M SWE Agent
+# SMARTM2M Track 3 — SMARTM2M SWE Agent
 
-Implementation of Track 3 from the SMARTM2M AI Engineer take-home: a custom
-software-engineering agent compared with the unmodified mini-swe-agent on the
-same model, budget, task IDs, and evaluation harness.
+This is a Track 3 submission: a custom SWE agent compared with the unmodified
+mini-swe-agent reference on the same model, endpoint, seed, task set, and
+primary attempt budget. Tracks 1 and 2 are intentionally out of scope.
 
-## Current status
+## Status at this checkout
 
-The executable harness and offline end-to-end smoke test are implemented. The
-employer's complete fixed task manifest was not present in the supplied PDF:
-the three printed IDs are examples, not an authorized eight-task list.
-Therefore this repository does not claim a SWE-bench score or positive lift
-yet. Replace tasks/evaluation.json with the exact confirmed manifest before
-running a scored experiment.
+The implementation and frozen protocol are complete. No real SWE-bench score
+or lift is claimed yet: this Work environment has no Docker daemon and no
+`DEEPINFRA_API_KEY`, so a valid eight-task primary run could not be completed.
+The synthetic `smartm2m smoke` result is plumbing evidence only.
 
-## Quick start
+## Frozen evaluation set
 
-~~~bash
+The assignment explicitly permits the 50-instance SWE-bench Verified Mini pool.
+This repository uses the immutable Hugging Face revision
+`b316c349947c29963fce3f4a65967c9807a4b673` of
+`MariusHobbhahn/swe-bench-verified-mini` (`test` split). The committed pool is
+`tasks/verified_mini_pool.txt`; its sorted-ID SHA-256 is
+`ee9f2273637b18488018603dfa222f6cca73e6f62ede44b2ef6cf9245ccc471f`.
+
+The eight IDs were selected before benchmarking with `random.Random(42).sample`
+from the lexicographically sorted 50-ID pool. The ordered frozen sample and
+fingerprint are recorded in `tasks/evaluation.selection.json` and
+`tasks/evaluation.json`:
+
+| Order | Instance |
+|---:|---|
+| 1 | `sphinx-doc__sphinx-8551` |
+| 2 | `django__django-11999` |
+| 3 | `django__django-11815` |
+| 4 | `django__django-12304` |
+| 5 | `django__django-12273` |
+| 6 | `django__django-12262` |
+| 7 | `django__django-12039` |
+| 8 | `django__django-11964` |
+
+The selected-ID SHA-256 is
+`395f2adfaf4b9b2c5a129b7de83fe886d4f3b281fb9588d5802e2dfcaa717dfb`.
+The PDF’s three printed IDs are treated as illustrative examples, not as a
+mandatory manifest. These eight remain the denominator even if an arm or task
+is blocked; substitution after freezing is prohibited.
+
+`scripts/select_verified_mini.py` rechecks the complete pool and selection.
+`scripts/hydrate_manifest.py` downloads the pinned dataset and writes only
+generation-safe fields. Neither script copies gold patches, test patches,
+hints, FAIL_TO_PASS, or PASS_TO_PASS into the agent manifest.
+
+## Reproduce the paired experiment
+
+Install the project and pinned external source commits:
+
+```bash
 python -m pip install -e ".[dev]"
-smartm2m smoke
-python -m pytest
-~~~
+python -m pip install -r requirements-evaluation.txt
+```
 
-The smoke command creates a disposable synthetic git repository, runs a
-scripted custom controller, replays the patch on a clean base, and generates
-paired report artifacts. It is plumbing evidence only, not benchmark
-evidence.
+Set the provider secret outside the repository, then run the one-command
+Track 3 protocol:
 
-## Reproduce the real comparison
+```bash
+export DEEPINFRA_API_KEY="..."
+smartm2m reproduce --config configs/experiment.lock.yaml --run-id track3-primary
+```
 
-1. Put the employer-confirmed task IDs, immutable base commits, repository
-   sources, and trusted visible test commands in tasks/evaluation.json.
-   Do not add patch, test_patch, FAIL_TO_PASS, PASS_TO_PASS, or hints_text to
-   the generation manifest.
-2. Install the pinned reference and evaluator in isolated environments:
+That command validates the frozen manifest, runs stock mini-swe-agent and the
+custom arm once per task, seals predictions, invokes the pinned official
+SWE-bench evaluator for both arms, computes the fixed-denominator report, and
+writes the evidence bundle under `results/track3-primary/`. Use
+`smartm2m audit --config configs/experiment.lock.yaml --run-dir results/track3-primary`
+to rebuild the report without a key.
 
-   ~~~bash
-   python -m pip install -r requirements-evaluation.txt
-   ~~~
+During reproduction the exact dataset revision is materialized locally twice:
+first as a safe four-column generation dataset for both agents, then as the
+full evaluator dataset only after both prediction files are sealed. This keeps
+the stock reference CLI compatible with the pinned revision without passing
+gold fields to either generation prompt.
 
-   The reference arm invokes mini-extra swebench and does not import or
-   modify its agent code. The requirements file pins the recorded upstream
-   commits; verify the installed package metadata before the scored run.
-3. Run the preflight gate:
+The lock uses `openai/gpt-oss-120b` through the configurable
+`https://api.deepinfra.com/v1` OpenAI-compatible endpoint, temperature `0`,
+requested seed `42`, 8,192 completion tokens per call, 60 custom turns / 60
+reference steps, one primary attempt, and a 2,700-second arm wall limit.
+Provider dollar pricing is intentionally unset; parity is enforced by the
+matched turn/token caps and observed token usage/cost is recorded separately.
 
-   ~~~bash
-   smartm2m preflight --config configs/experiment.lock.yaml
-   ~~~
+## What was built
 
-4. Supply the API key only through the environment and run both arms:
+The custom intervention is operational rather than a second model: inspect
+first, bounded source-only patches, observed repository test output, patch
+identity, pre-edit checkpoints, automatic build-break rollback, one bounded
+loop recovery, and clean-base replay before sealing a prediction. `run_tests`
+accepts declared commands or bounded targeted repository test runners, rejects
+shell composition/destructive commands, records stdout/stderr, return codes,
+timeouts, and the task container image, and runs in the official x86_64 image
+when Docker is available.
 
-   ~~~bash
-   export DEEPINFRA_API_KEY="..."
-   smartm2m reproduce --config configs/experiment.lock.yaml --run-id track3-primary
-   ~~~
+The reference is a subprocess call to stock mini-swe-agent 2.4.6 at source
+commit `a83fcae82d2a08f0ee0c688f9d137b3566c097f8`; its prompts, parser, loop,
+tools, and source are not modified. The official evaluator is pinned to SWE-
+bench commit `02e7a74ffd0b707aab73d203fe87bdc7c76afc8e` and is the only
+authority for resolved status.
 
-   The provider/model, decoding settings, seed, retry policy, task order,
-   patches, trajectories, commands, validation, official evaluation output,
-   usage, and checksums are written under results/track3-primary/.
-5. Rebuild the tables without an API key:
+## Results and evidence
 
-   ~~~bash
-   smartm2m audit --config configs/experiment.lock.yaml --run-dir results/track3-primary
-   ~~~
+When a real run exists, `summary.md` contains all eight rows with reference and
+custom status, patch SHA-256, notes, paired outcomes, percentages, and lift:
 
-   Re-evaluate one sealed prediction arm, if needed:
+```text
+reference % = resolved_reference / 8 * 100
+custom %    = resolved_custom / 8 * 100
+lift        = custom % - reference %
+```
 
-   ~~~bash
-   smartm2m evaluate --config configs/experiment.lock.yaml \
-     --run-dir results/track3-primary --arm custom
-   ~~~
+Reference trajectories/logs, custom trajectories, command history, patches,
+clean validation, official evaluator output, usage, contamination worksheet,
+and `checksums.sha256` are retained in the run directory. Missing or
+unparseable evaluator records count as unresolved. No benchmark result is
+presented in this repository until those artifacts exist.
 
-smartm2m reproduce is the one-command real-track entry point. It generates
-both prediction files, calls the official evaluator separately for each sealed
-arm, and rebuilds the conservative paired summary. Missing or unverified
-instances count as unresolved.
+## Layout and limitations
 
-## What the custom arm adds
+- `src/smartm2m/` — controller, safe tools, model transport, reference/evaluator boundaries, validation, reporting.
+- `tasks/` — frozen safe manifest, deterministic selection record, and 50-ID pool.
+- `configs/` — locked model, endpoint, versions, seed, evaluator, and limits.
+- `scripts/` — exact-revision pool selection and safe manifest hydration.
+- `docs/` — protocol, provenance, contamination policy, acceptance checklist, and scope record.
+- `MANUAL_ACTIONS.md` — only environment/submission actions that cannot be completed here.
 
-- Bounded list_files, search, read_file, apply_patch, run_tests, get_diff,
-  rollback, and submit_patch tools.
-- A source-only edit boundary that rejects path traversal, tests, and common
-  build/configuration files.
-- Trusted test-command allowlisting; the model cannot invent a shell command.
-- Checkpoint before every edit, automatic rollback on syntax/import/build
-  failures, and one bounded repeated-state recovery.
-- Exact patch capture and clean-base replay validation before a prediction is
-  sealed.
-- Full redacted trajectory/command artifacts and machine-readable statuses.
+The custom arm does not silently fall back to a host environment when a task
+image is declared: without Docker it records an infrastructure failure. Hosted
+providers may ignore a requested seed or vary backend weights; that limitation
+is recorded rather than described as determinism. No UI, database, vector
+store, multi-agent planner, model training, alternate provider, or Track 1/2
+implementation was added.
 
-The baseline is deliberately less constrained: it is the stock mini-swe-agent
-reference process with only model, endpoint, budget, runtime, and output
-configuration overrides.
+In this audit environment the real pinned evaluator was invoked with a valid
+empty-patch prediction and stopped before producing an official report because
+the Docker socket is unavailable. That attempt is evidence of an environment
+block, not a benchmark score.
 
-## Evaluation rules
-
-The headline metric is official resolved rate:
-
-~~~text
-100 * verified_resolved_tasks / confirmed_task_count
-~~~
-
-A task is resolved only when every official FAIL_TO_PASS test passes and
-every official PASS_TO_PASS test remains passing. The headline lift is custom
-rate minus reference rate in percentage points. The report also shows
-custom-only gains, reference-only losses, both-solved tasks, and neither-
-verified tasks. The official evaluator never feeds results back into primary
-generation.
-
-## Repository map
-
-| Path | Purpose |
-|---|---|
-| src/smartm2m/agent.py | Custom controller and recovery state machine |
-| src/smartm2m/tools.py | Checked tools, checkpoints, command evidence |
-| src/smartm2m/model.py | Dependency-free OpenAI-compatible transport |
-| src/smartm2m/validation.py | Patch hashes and clean-base replay |
-| src/smartm2m/reference.py | Unmodified mini-swe-agent integration |
-| src/smartm2m/evaluator.py | Official SWE-bench subprocess boundary |
-| src/smartm2m/reporting.py | Offline paired metrics and Markdown tables |
-| src/smartm2m/experiment.py | Preflight, run lifecycle, artifacts, audit |
-| src/smartm2m/smoke.py | No-key synthetic end-to-end verification |
-| configs/experiment.lock.yaml | Pinned experiment contract |
-| configs/reference-overrides.yaml | Configuration-only matched-budget overlay |
-| tasks/evaluation.json | Deliberately pending employer manifest |
-
-## Limitations and scope cuts
-
-No model training, web application, database, hosted service, vector store,
-multi-agent planner, or alternate-provider benchmark was added. Docker task
-provisioning and the official SWE-bench harness remain external prerequisites;
-the repository records their exact commands and failures rather than silently
-simulating a score. Hosted APIs may ignore a requested seed or change backend
-weights; the run manifest records that limitation. No provider key, benchmark
-gold patch, or hidden test data is committed.
-
-See DESIGN.md, IMPLEMENTATION_PLAN.md, docs/evaluation-protocol.md, and
-docs/security-and-contamination.md.
+See [DESIGN.md](DESIGN.md), [docs/evaluation-protocol.md](docs/evaluation-protocol.md),
+and [docs/security-and-contamination.md](docs/security-and-contamination.md).

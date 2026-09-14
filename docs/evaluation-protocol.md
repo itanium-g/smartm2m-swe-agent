@@ -1,76 +1,95 @@
 # Track 3 evaluation protocol
 
-The code implements the following protocol. Freeze the completed task
-manifest and lock before primary inference.
+## Frozen task set
 
-## Fixed set and input boundary
+The SMARTM2M PDF permits the 50-instance SWE-bench Verified Mini subset. The
+repository pins `MariusHobbhahn/swe-bench-verified-mini` at revision
+`b316c349947c29963fce3f4a65967c9807a4b673`, verifies all 50 IDs against
+`tasks/verified_mini_pool.txt`, sorts them, and samples eight with
+`random.Random(42)`. The resulting ordered IDs and SHA-256 are committed in
+`tasks/evaluation.selection.json`. The three IDs printed in the PDF are
+examples; they are not silently forced into the sample. No ID may be replaced
+after observing results.
 
-The employer's exact ordered instance IDs are the denominator. The three IDs
-printed in the supplied PDF are examples only. Reject duplicates, missing
-base commits, unknown IDs, and evaluation/development overlap before a scored
-run. The current tasks/evaluation.json is intentionally pending.
+The complete frozen denominator is:
 
-Generation receives only:
+```text
+sphinx-doc__sphinx-8551
+django__django-11999
+django__django-11815
+django__django-12304
+django__django-12273
+django__django-12262
+django__django-12039
+django__django-11964
+```
 
-- instance ID and issue statement;
-- repository identity and base commit; and
-- trusted operational metadata needed to prepare the workspace.
+## Generation boundary
 
-Patch, test_patch, hints_text, FAIL_TO_PASS, and PASS_TO_PASS stay in the
-trusted evaluator area and are never mounted into generation or placed in the
-custom prompt.
+`scripts/hydrate_manifest.py` reads the pinned dataset and writes only:
+
+- instance ID and issue/problem statement;
+- repository name, clone URL, and base commit;
+- split and official x86_64 image name; and
+- a safe repository-native test profile.
+
+It rejects or omits `patch`, `test_patch`, `hints_text`, `FAIL_TO_PASS`, and
+`PASS_TO_PASS`. The evaluator-only fields are not present in the custom
+prompt, trajectory input, or workspace. They become available only to the
+official evaluator after prediction files are sealed.
+
+The reproduction command materializes the pinned revision locally as a
+four-column safe dataset for reference/custom generation. After both arms
+finish, it materializes the full revision separately for the official
+evaluator. This avoids relying on a floating Hugging Face `main` snapshot.
 
 ## Matched arms
 
-The reference arm invokes mini-swe-agent v2.4.6 through mini-extra swebench
-without source or prompt modification. The custom arm is separate code. Both
-arms use the same model route, service tier, seed request, temperature,
-completion limit, retry policy, task IDs, task order policy, wall-time
-limit, nominal cost limit, and host/image policy.
-
-The current starting profile is:
-
-| Setting | Value |
+| Setting | Locked value |
 |---|---|
-| Model | openai/gpt-oss-120b through configurable OpenAI-compatible API |
-| Temperature | 0 |
-| Requested seed | 42 |
-| Maximum completion | 8,192 tokens per model call |
-| Turns | 60 per episode |
-| Nominal API threshold | 0.50 USD per episode |
-| Wall time | 2,700 seconds per episode |
-| Test command timeout | 120 seconds |
-| Primary attempts | 1 per task per arm |
+| Model | `openai/gpt-oss-120b` |
+| Endpoint | configurable, default `https://api.deepinfra.com/v1` |
+| Key env | `DEEPINFRA_API_KEY` |
+| Temperature / requested seed | `0` / `42` |
+| Max completion | `8192` tokens per call |
+| Reference / custom cap | 60 steps / 60 turns |
+| Wall limit | 2,700 seconds per arm episode |
+| Primary attempts | one per task per arm |
+| Dollar budget | not claimed; pricing is unset |
 
-The values are starting settings, not a measured optimum. The run manifest
-records the effective configuration and known provider limitations.
+The same model and request settings are used by the custom OpenAI-compatible
+transport and stock mini-swe-agent/LiteLLM. Equal turn/token caps are the
+enforceable common budget; observed token usage and any provider-reported cost
+are retained separately. A requested seed is not claimed to guarantee hosted
+determinism.
 
-## Run order and scoring
+## Execution and scoring
 
-The runner prepares clean workspaces, generates both arms, seals prediction
-files and artifact hashes, and only then invokes the official evaluator for
-each arm with unique run IDs. Evaluation output never returns to primary
-generation.
+The reference command is stock `mini-extra swebench` with configuration-only
+overlays. Its output directory retains `preds.json`, per-instance trajectory
+JSON, exit statuses, and mini-swe-agent logs. The custom arm retains the
+trajectory, command JSONL, patch, validation, and sealed prediction per task.
 
-A task is resolved only if all official FAIL_TO_PASS tests pass and all
-official PASS_TO_PASS tests pass. The report uses the complete confirmed N:
+After both arms finish, the pinned SWE-bench evaluator runs independently on
+each prediction file. Only its `resolved` result is used for scoring. A task is
+resolved only when official FAIL_TO_PASS tests pass and official PASS_TO_PASS
+tests remain passing. Missing, blocked, empty, timed-out, or unparsable
+records count as unresolved.
 
-~~~text
-reference rate = 100 * reference resolved / N
-custom rate    = 100 * custom resolved / N
-lift           = custom rate - reference rate
-~~~
+```text
+reference % = reference_resolved / 8 * 100
+custom %    = custom_resolved / 8 * 100
+lift        = custom % - reference %
+```
 
-Missing, blocked, unparseable, or unevaluated instances count as unresolved in
-the conservative headline. Pair categories show both-solved, custom-only,
-reference-only, and neither-verified outcomes.
+The report also counts both solved, custom only, reference only, and neither
+verified. A reference win is reported, not hidden.
 
-## Reproduction
+## One command
 
-~~~bash
+```bash
 smartm2m reproduce --config configs/experiment.lock.yaml --run-id track3-primary
-smartm2m audit --config configs/experiment.lock.yaml --run-dir results/track3-primary
-~~~
+```
 
-The API key is supplied only through the environment. Audit reads saved
-records and needs no key.
+The API key is read only from the environment. `smartm2m audit` rebuilds the
+summary from the retained evidence without calling the provider.

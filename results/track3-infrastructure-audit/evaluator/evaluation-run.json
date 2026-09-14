@@ -1,0 +1,22 @@
+{
+  "status": "failed",
+  "command": [
+    "python",
+    "-m",
+    "swebench.harness.run_evaluation",
+    "--dataset_name",
+    "MariusHobbhahn/swe-bench-verified-mini",
+    "--split",
+    "test",
+    "--predictions_path",
+    "/tmp/smartm2m-official-eval-20260914/custom/predictions.jsonl",
+    "--max_workers",
+    "1",
+    "--run_id",
+    "smartm2m-official-eval-20260914-custom-reeval"
+  ],
+  "returncode": 1,
+  "reason": "official evaluator returned non-zero",
+  "failure_observed": "Docker client initialization failed with PermissionError: [Errno 1] Operation not permitted while opening the Docker socket",
+  "report_written": false
+}

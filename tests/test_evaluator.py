@@ -51,3 +51,16 @@ def test_official_evaluator_keeps_cwd_relative_reports_in_arm_directory(tmp_path
     assert records["synthetic__one"]["resolved"] is True
     saved = json.loads((output / "evaluation-run.json").read_text(encoding="utf-8"))
     assert saved["working_directory"] == str(output.resolve())
+
+
+def test_official_evaluator_accepts_materialized_dataset_override():
+    root = Path(__file__).parents[1]
+    evaluator = OfficialEvaluator(ExperimentConfig.load(root / "configs/experiment.lock.yaml"))
+
+    command = evaluator.command(
+        Path("/tmp/predictions.jsonl"),
+        "audit",
+        dataset_name="/tmp/pinned-evaluator-dataset",
+    )
+
+    assert command[command.index("--dataset_name") + 1] == "/tmp/pinned-evaluator-dataset"

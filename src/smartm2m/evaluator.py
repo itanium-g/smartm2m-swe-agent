@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -13,6 +14,17 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .config import ExperimentConfig
+
+
+def _redacted_result(result: "EvaluationRun") -> dict[str, Any]:
+    payload = result.as_dict()
+    for field in ("stdout", "stderr", "reason"):
+        payload[field] = re.sub(
+            r"(?i)(authorization\s*:\s*bearer\s+|api[_-]?key\s*[=:]\s*|token\s*[=:]\s*)[^\s\"']+",
+            r"\1[REDACTED]",
+            str(payload.get(field, "")),
+        )
+    return payload
 
 
 @dataclass
@@ -56,10 +68,17 @@ class OfficialEvaluator:
     def __init__(self, config: ExperimentConfig):
         self.config = config
 
-    def command(self, predictions: Path, run_id: str) -> list[str]:
+    def command(
+        self,
+        predictions: Path,
+        run_id: str,
+        *,
+        dataset_name: str | None = None,
+    ) -> list[str]:
+        dataset = dataset_name or self.config.dataset_name
         if self.config.official_evaluator_command:
             return shlex.split(self.config.official_evaluator_command.format(
-                dataset_name=self.config.dataset_name,
+                dataset_name=dataset,
                 predictions=str(predictions),
                 run_id=run_id,
                 split=self.config.reference.split,
@@ -69,7 +88,7 @@ class OfficialEvaluator:
             "-m",
             "swebench.harness.run_evaluation",
             "--dataset_name",
-            self.config.dataset_name,
+            dataset,
             "--split",
             self.config.reference.split,
             "--predictions_path",
@@ -80,11 +99,18 @@ class OfficialEvaluator:
             run_id,
         ]
 
-    def run(self, predictions: str | Path, run_id: str, output_dir: str | Path) -> EvaluationRun:
+    def run(
+        self,
+        predictions: str | Path,
+        run_id: str,
+        output_dir: str | Path,
+        *,
+        dataset_name: str | None = None,
+    ) -> EvaluationRun:
         prediction_path = Path(predictions).resolve()
         destination = Path(output_dir).resolve()
         destination.mkdir(parents=True, exist_ok=True)
-        command = self.command(prediction_path, run_id)
+        command = self.command(prediction_path, run_id, dataset_name=dataset_name)
         started = time.monotonic()
         try:
             proc = subprocess.run(
@@ -121,6 +147,6 @@ class OfficialEvaluator:
                 "unavailable", command, None, time.monotonic() - started, "", str(exc), run_id, str(exc), str(destination)
             )
         (destination / "evaluation-run.json").write_text(
-            json.dumps(result.as_dict(), indent=2) + "\n", encoding="utf-8"
+            json.dumps(_redacted_result(result), indent=2) + "\n", encoding="utf-8"
         )
         return result

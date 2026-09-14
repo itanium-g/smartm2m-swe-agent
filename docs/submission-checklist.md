@@ -1,37 +1,28 @@
 # Track 3 submission checklist
 
-## Implemented
+## Repository acceptance
 
-- [x] Top-level README with exact install, smoke, reproduce, evaluate, and audit commands.
-- [x] Separate custom controller and unmodified mini-swe-agent subprocess boundary.
-- [x] Typed source-only search/read/edit/test/rollback/submit tools.
-- [x] Actual command output, return code, timeout, and duration capture.
-- [x] Pre-edit checkpoints and bounded build/loop recovery.
-- [x] Patch hash and clean-base replay validation.
-- [x] Standard prediction JSONL generation for both arms.
-- [x] Official evaluator subprocess integration with unique run IDs.
-- [x] Conservative paired rate/lift arithmetic and offline audit.
-- [x] Full per-task artifact layout, redaction path, and checksum generation.
-- [x] Offline synthetic end-to-end smoke and CI workflow.
-- [x] Design, protocol, contamination, source, and scope documentation.
+- [x] Top-level README identifies Track 3 and the exact reproduction command.
+- [x] Eight IDs are frozen from the authorized Verified Mini pool before runs.
+- [x] Dataset, mini-swe-agent, evaluator, model request, seed, and limits are locked.
+- [x] Safe hydration and hidden-field rejection/projection checks exist.
+- [x] Custom agent inspects, edits, runs observed tests, recovers, validates, and seals patches.
+- [x] Stock mini-swe-agent remains the reference boundary.
+- [x] Official evaluator is the only resolution authority.
+- [x] Reports use denominator eight and show reference wins and negative lift.
+- [x] Logs, patches, trajectories, commands, validation, evaluator output, usage, and checksums have an artifact layout.
+- [x] CI runs install, compile, lint, offline smoke, and unit tests; benchmark is not automatic.
 
-## Required before claiming a benchmark result
+## Before publishing a benchmark claim
 
-- [ ] Obtain the employer-authorized fixed task IDs and expected count.
-- [ ] Fill immutable base commits, repository sources, visible commands, image
-  digests, and dataset revision in tasks/evaluation.json and the lock.
-- [ ] Install and verify mini-swe-agent v2.4.6 and the pinned evaluator.
-- [ ] Verify model metadata, seed support, provider pricing, retry behavior,
-  and budget controls on the selected host.
-- [ ] Freeze code, prompts, task list, model settings, and evaluator before
-  generation.
-- [ ] Run both arms on every fixed task and preserve empty/failing records.
-- [ ] Evaluate sealed predictions using the official harness.
-- [ ] Review contamination/memorization and publish the rationale.
-- [ ] Add actual time, unattended elapsed time, costs, scope cuts, final
-  commit, and evidence-bundle hash.
-- [ ] Make the repository and durable evidence archive public if required by
-  the employer.
+- [ ] Set `DEEPINFRA_API_KEY` in the isolated benchmark environment and verify account balance/quota.
+- [ ] Run the exact one-command primary protocol on a compatible x86_64 Linux/Docker host.
+- [ ] Confirm `mini-extra swebench --help`, generated argv, output layout, and evaluator artifacts are retained.
+- [ ] Seal code/config/version/task/model hashes before generation; keep debug runs separate.
+- [ ] Review every reference and custom trajectory for contamination signals.
+- [ ] Fill the time-invested record with honest human active hours and unattended elapsed time.
+- [ ] Re-run the secret/publication scan on the final evidence bundle.
+- [ ] Make the repository public and submit its URL to SMARTM2M.
 
-No benchmark rate or positive lift is claimed until those unchecked items
-exist as evidence.
+Do not replace a blocked task or present synthetic smoke output as the
+eight-task benchmark.

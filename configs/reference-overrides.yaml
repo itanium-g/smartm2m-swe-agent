@@ -3,7 +3,10 @@
 # environment implementation remain untouched.
 agent:
   step_limit: 60
-  cost_limit: 0.50
+  # Dollar pricing is provider-specific; the common primary cap is step_limit=60.
+  # Keep the upstream agent's own cost guard far above the primary run so it
+  # cannot silently impose a different budget when pricing is unavailable.
+  cost_limit: 1000000
 environment:
   timeout: 120
 model:
