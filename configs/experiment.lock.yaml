@@ -1,0 +1,49 @@
+{
+  "protocol_version": "track3-v1",
+  "manifest": {
+    "path": "../tasks/evaluation.json",
+    "expected_count": 8,
+    "authority": "Replace with the employer-confirmed fixed SWE-bench Verified manifest before scored runs."
+  },
+  "model": {
+    "provider": "deepinfra",
+    "model": "openai/gpt-oss-120b",
+    "base_url": "https://api.deepinfra.com/v1",
+    "api_key_env": "DEEPINFRA_API_KEY",
+    "temperature": 0.0,
+    "seed": 42,
+    "max_tokens": 8192,
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "input_usd_per_million": null,
+    "output_usd_per_million": null
+  },
+  "reference": {
+    "executable": "mini-extra",
+    "version": "2.4.6",
+    "source_sha": "a83fcae82d2a08f0ee0c688f9d137b3566c097f8",
+    "evaluator_sha": "02e7a74ffd0b707aab73d203fe87bdc7c76afc8e",
+    "subset": "verified",
+    "split": "test",
+    "workers": 1,
+    "config_path": ""
+  },
+  "baseline": {
+    "max_turns": 60,
+    "cost_limit_usd": 0.50,
+    "wall_time_seconds": 2700,
+    "command_timeout_seconds": 120,
+    "max_output_chars": 10000
+  },
+  "custom": {
+    "max_turns": 60,
+    "cost_limit_usd": 0.50,
+    "wall_time_seconds": 2700,
+    "command_timeout_seconds": 120,
+    "max_output_chars": 10000
+  },
+  "results_root": "../results",
+  "dataset_name": "princeton-nlp/SWE-bench_Verified",
+  "dataset_revision": "",
+  "run_id_prefix": "smartm2m"
+}

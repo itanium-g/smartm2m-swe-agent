@@ -1,35 +1,37 @@
 # Time invested and scope
 
-Updated: 2026-09-12. The PDF asks for actual time invested and reductions in scope. Planned allocations are not actual effort.
+## Actual record
 
-## Current record
+The implementation was completed in an assistant-supported coding session on
+2026-09-14. The workspace recorded command outputs and smoke artifacts, but
+human active minutes were not separately instrumented. No invented hour total
+is reported. Benchmark inference, API spend, and official evaluation time are
+zero in the current repository state.
 
-| Activity | Status | Actual time record |
-|---|---|---|
-| PDF/source review and reference-repository adaptation | Completed in one assistant-assisted planning session | Exact human active time was not recorded; no hour total is claimed. |
-| Primary-source checks and document authoring | Completed as part of that session | Included above; not a measured benchmark or development run. |
-| Agent implementation | Not started | No implementation work performed in this revision. |
-| Model inference and benchmark evaluation | Not run | No model/test-execution cost or timing result. |
-| Deployment/employer submission | Not performed | Not part of the planning request. |
+## Completed work
 
-Do not backfill estimated planning time as measured work. Before final submission, add any actual candidate effort separately and explain an unrecorded planning component honestly.
+- Python package and CLI;
+- provider-neutral model transport;
+- custom controller, typed tools, checkpoint/rollback, loop recovery;
+- patch capture, clean replay validation, prediction serialization;
+- reference/evaluator integration boundaries;
+- offline paired reporting, checksums, CI, and documentation.
 
-## Future allocation
+## Scope reductions
 
-The [implementation plan](../IMPLEMENTATION_PLAN.md) allocates 34 active hours plus 6 hours of contingency across approximately one week. Image download/build time, model execution, evaluator time, and waiting for access are separately measured elapsed time. This is a planning envelope, not a promised completion time or a supplied deadline.
+Tracks 1 and 2, model training, a web UI, accounts, database, hosted service,
+vector retrieval, multi-agent planning, multiple primary providers, and
+best-of-many scoring were excluded. They do not satisfy the highest-value
+missing requirement: an honest matched Track 3 comparison on the employer's
+fixed IDs.
 
-Record future work with date, activity, active minutes, unattended elapsed minutes, cost if applicable, output/run ID, and blockers. Do not sum parallel elapsed durations into human hours. Report the actual total and uncertainty at handoff.
+The custom controller was kept small enough to inspect under the deadline.
+Semantic retrieval, richer ablations, repeated primary attempts, and
+alternative models are deferred until the fixed manifest, first paired run,
+and evidence bundle are complete.
 
-## Scope decisions
+## Remaining time record
 
-| Item | Decision and reason |
-|---|---|
-| Tracks 1 and 2 | Not selected; the brief allows one strong track. |
-| Website, login, API service, database, deployment URL | Excluded; Track 3 requires a reproducible repository experiment. |
-| Model training | Excluded; this track measures harness improvement using the same model. |
-| Multiple model/providers in the primary result | Excluded; select one before freeze to preserve comparison and time. |
-| Semantic retrieval and multiple-agent search | Deferred until basic validation/recovery has measured evidence. |
-| Paired repeat runs and ablations | P1, added only after primary artifacts are complete and budget remains. |
-| Confirmed task count, second arm, official tests, failure logs, contamination review | Preserved; cannot be silently cut to meet the timebox. |
-
-No implementation scope reductions have yet occurred because implementation has not started. If future work is incomplete, record exactly what was omitted, why, how much time was spent, and how it affects interpretation. A negative or partial result is preferable to an inflated completeness claim.
+Before employer handoff, add dated active minutes, unattended elapsed minutes,
+model/provider cost, run ID, blockers, and actual reductions. Keep parallel
+elapsed time separate from human active time.

@@ -1,0 +1,4 @@
+# Install outside this package, in an isolated evaluation environment.
+# The commit pins are the candidates recorded in the experiment protocol.
+mini-swe-agent @ git+https://github.com/SWE-agent/mini-swe-agent.git@a83fcae82d2a08f0ee0c688f9d137b3566c097f8
+swebench @ git+https://github.com/SWE-bench/SWE-bench.git@02e7a74ffd0b707aab73d203fe87bdc7c76afc8e

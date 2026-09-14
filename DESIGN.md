@@ -1,56 +1,89 @@
 # Track 3 design
 
-Updated: 2026-09-12. **Proposed design; implementation and measurements are pending.** Replace proposed behavior with verified behavior before submission.
+## Built system
 
-## Problem and objective
+The repository now contains a small Python experiment runner with two isolated
+arms:
 
-An LLM can produce a plausible patch that does not fix a bug or breaks existing behavior. This project will test whether a small controller improves an unchanged model's success over the assignment's reference agent. The primary result is the percentage-point difference in official resolved rate on the complete fixed task list, under matched budgets.
+1. Reference: invokes the shipped mini-swe-agent batch runner at the configured
+   version. The reference source, prompts, parser, and agent are not imported
+   or modified.
+2. Custom: runs a separate sequential controller around the same
+   OpenAI-compatible model route. It exposes bounded repository tools, records
+   every action, executes trusted visible tests, and seals a patch only after
+   clean-base replay validation.
 
-## Architecture
+The experiment runner creates one fresh workspace and trajectory per task,
+preserves empty/failing predictions, runs the official evaluator only after
+both arms are sealed, and produces a conservative paired report. The offline
+smoke command exercises the same controller, patch capture, clean replay,
+artifact, and reporting path on a synthetic fixture.
 
-```mermaid
+~~~mermaid
 flowchart TD
-    LOCK["Frozen experiment"] --> BASE["Unmodified reference"]
-    LOCK --> CUSTOM["Custom controller"]
-    BASE --> BENV["Fresh task sandbox"]
-    CUSTOM --> CENV["Fresh task sandbox"]
-    CENV --> CHECK["Visible tests and checkpoints"]
-    CHECK -->|Repair within budget| CUSTOM
-    BENV --> SEAL["Sealed patches and logs"]
-    CHECK --> SEAL
-    SEAL --> EVAL["Fresh official evaluation"]
-    EVAL --> REPORT["Paired results and evidence"]
-```
+    LOCK[Experiment lock and fixed manifest] --> BASE[Unmodified mini-swe-agent]
+    LOCK --> CUSTOM[Custom controller]
+    BASE --> SEALED[Sealed predictions]
+    CUSTOM --> SEALED
+    SEALED --> EVAL[Official evaluator in fresh runs]
+    EVAL --> REPORT[Paired report and checksums]
+~~~
 
-The experiment supervisor owns configuration, task allocation, the model credential, lifecycle limits, and artifact collection. Task containers expose only the issue and base repository. The evaluator alone receives gold test material after both arms' patches are sealed. It never sends its output back into the scored generation session.
+## Why this design
 
-The baseline uses pinned mini-swe-agent code and shipped SWE-bench prompts. Only documented model, endpoint, budget, environment, and output settings change. The custom controller can share the same transport and environment interfaces while implementing its own control flow. Common environment restrictions apply equally to both arms.
+The strongest low-cost opportunity in the brief is not a larger prompt; it is
+reliable feedback and accounting. The custom arm therefore focuses on:
 
-## Custom behavior
+- search and file identification before editing;
+- source-only unified patches;
+- a trusted allowlist of test commands;
+- observed return codes instead of model claims;
+- a checkpoint before each edit;
+- automatic rollback for syntax/import/build failures;
+- one bounded recovery from repeated action/workspace states; and
+- patch identity tied to a clean validation replay.
 
-The agent will locate relevant files, formulate a small reproduction from the issue, edit source, and run available repository tests. The controller records the actual command, exit status, collected-test count where available, and complete output. An assertion by the model that tests passed cannot satisfy validation.
+This keeps the causal difference between the arms legible. The model,
+temperature, seed, maximum completion tokens, retry policy, wall-time limit,
+nominal cost limit, task set, and official evaluator are intended to be
+identical between arms. The custom controller's extra test-gating and recovery
+are the measured intervention.
 
-Before submitting, reconstruct the exact candidate patch in a fresh base workspace and rerun the chosen visible checks. Associate the result with the patch hash and test-command hash. If the patch changes, invalidate that validation. A reproduction that was never observed failing before the fix is recorded as weaker evidence.
+## Data boundary
 
-Checkpoint before edits. Detect repeated command/output/workspace states and patch oscillation. On syntax/import breakage or a newly introduced visible regression, restore the prior checkpoint, explain the observed failure, and allow a bounded repair within the original budget. If repair fails, produce an explicit failure record; retain attempted diffs for audit.
+Only the instance ID, issue statement, repository identity/base commit, and
+trusted operational metadata reach generation. Evaluator-only fields such as
+patch, test_patch, hints_text, FAIL_TO_PASS, and PASS_TO_PASS are not in the
+generation payload. Official reports are read only after prediction files are
+sealed. The controller never receives a gold patch or hidden test result.
 
-Visible checks guide the custom agent. Only the official evaluator determines benchmark resolution. Test selection based on issue text and base-repository files is permitted; using withheld test names, gold patches, or prior solution traces for generation is excluded.
+## Known limitations
 
-## Key tradeoffs
+- The complete employer task manifest is missing from the supplied PDF, so no
+  benchmark number is reported until the exact fixed IDs and pins are filled.
+- The default hosted route is configurable and its backend weights are not
+  provably immutable. A requested seed is recorded but cannot guarantee
+  deterministic hosted output.
+- Docker/SWE-bench image preparation and the official harness are external
+  prerequisites. Their failures are recorded as infrastructure failures, not
+  converted into agent successes.
+- The mini-swe-agent command is an integration boundary; its installation and
+  exact output layout must be verified during preflight on the evaluation host.
+- One attempt per task and approximately eight instances provide limited
+  statistical precision. Paired gains/losses are more informative than a
+  broad superiority claim.
+- Automatic build rollback uses the latest task checkpoint and is intentionally
+  conservative; a semantic test failure is returned to the model for repair
+  rather than being assumed to be a broken build.
 
-| Choice | Benefit | Cost or limitation |
-|---|---|---|
-| Sequential Python controller | Small implementation; explicit state and accounting. | Less search breadth than a large agent system. |
-| Shared stock model transport | Fewer provider differences in the comparison. | Must inspect retries, dropped parameters, and price registration. |
-| Direct test gating and rollback | Addresses concrete build failures and unsupported completion claims. | Uses time within the same episode budget. |
-| Existing x86_64 machine with Docker | No always-on service; conventional evaluation path. | Image storage and historical dependencies can dominate setup. |
-| One model and one primary attempt per task | Affordable, interpretable paired comparison. | Eight tasks and one attempt give limited statistical precision. |
-| Official tests only after generation freeze | Reduces evaluation leakage. | Hidden failures cannot guide the primary run's repairs. |
+## Next steps before submission
 
-## Limitations and next steps
-
-No improvement is guaranteed. Modern reference prompts already encourage reproduction and testing, so the custom agent must demonstrate a benefit from enforced validation and recovery. A small public benchmark can be memorized, and a hosted model identifier does not prove immutable backend weights. Same seeds do not guarantee bit-for-bit hosted outputs.
-
-Complete the task manifest and compatibility checks, implement the minimal end-to-end path, then test recovery on synthetic/development bugs. Freeze the experiment before the scored comparison. Report losses, infrastructure failures, suspected contamination, scope cuts, and actual time alongside gains. Add paired repetitions and development ablations only if the core evidence is complete and budget remains.
-
-Detailed contracts are in the [plan](IMPLEMENTATION_PLAN.md), [evaluation protocol](docs/evaluation-protocol.md), and [security/contamination policy](docs/security-and-contamination.md).
+1. Obtain the employer-authorized task manifest and replace the pending
+   placeholder without changing the denominator.
+2. Freeze the dataset revision, base commits, image digests, model metadata,
+   prices, dependency lock, prompt hashes, and evaluator revision.
+3. Run an isolated mini-swe-agent smoke task, then the paired primary run.
+4. Inspect every trajectory for accidental solution exposure or memorization
+   signals and publish the assessment without removing flagged tasks.
+5. Publish the repository and durable redacted result bundle; report losses,
+   blocked tasks, actual costs, and scope reductions.
