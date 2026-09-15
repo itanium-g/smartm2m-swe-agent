@@ -264,6 +264,7 @@ class ToolRunner:
             "get_diff": self.get_diff,
             "submit_patch": self.submit_patch,
             "rollback": self.rollback,
+            "commentary": lambda **kwargs: ToolResult(True, "noted", {"commentary": kwargs}),
         }
         handler = handlers.get(call.name)
         if handler is None:

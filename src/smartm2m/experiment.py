@@ -50,6 +50,7 @@ def _redact(value: str) -> str:
         (r"(?i)(authorization\s*:\s*bearer\s+)[^\s]+", r"\1[REDACTED]"),
         (r"(?i)(api[_-]?key\s*[=:]\s*)[^\s\"']+", r"\1[REDACTED]"),
         (r"(?i)(token\s*[=:]\s*)[^\s\"']+", r"\1[REDACTED]"),
+        (r"\bgsk_[A-Za-z0-9_]{20,}\b", "[REDACTED]"),
     ]
     for pattern, replacement in replacements:
         value = re.sub(pattern, replacement, value)

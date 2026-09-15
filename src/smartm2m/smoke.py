@@ -6,6 +6,7 @@ import hashlib
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -75,7 +76,7 @@ def run_smoke(output_dir: str | Path | None = None) -> Path:
             problem_statement="The add function subtracts its right operand. Make addition correct without changing tests.",
             repo_path=str(fixture),
             test_commands=(
-                'python -c "from src.calculator import add; assert add(2, 3) == 5; assert add(4, 0) == 4"',
+                f'{sys.executable} -c "from src.calculator import add; assert add(2, 3) == 5; assert add(4, 0) == 4"',
             ),
         )
         patch = """diff --git a/src/calculator.py b/src/calculator.py

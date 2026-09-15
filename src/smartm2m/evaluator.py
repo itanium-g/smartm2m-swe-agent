@@ -24,6 +24,7 @@ def _redacted_result(result: "EvaluationRun") -> dict[str, Any]:
             r"\1[REDACTED]",
             str(payload.get(field, "")),
         )
+        payload[field] = re.sub(r"\bgsk_[A-Za-z0-9_]{20,}\b", "[REDACTED]", payload[field])
     return payload
 
 

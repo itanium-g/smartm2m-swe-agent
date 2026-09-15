@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 641,
+  "estimated_cost_usd": 0.0048354,
+  "instance_id": "django__django-12262",
+  "last_successful_test_command": null,
+  "model_attempts": 16,
+  "model_requests": 10,
+  "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "prompt_tokens": 29672,
+  "reason": "provider HTTP 413: {\"error\":{\"message\":\"Request too large for model `openai/gpt-oss-120b` in organization `org_01jk7q9ddbe6v9wvzwa1f3dt6d` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Requested 8020, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n",
+  "recovery_used": false,
+  "status": "provider_error",
+  "total_tokens": 30313,
+  "turns": 10,
+  "validation_required": true
+}

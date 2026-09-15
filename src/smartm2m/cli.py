@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .config import ConfigError, ExperimentConfig
+from .config import ConfigError, ExperimentConfig, load_env_file
 from .evaluator import OfficialEvaluator
 from .experiment import audit_run, preflight, reproduce
 from .smoke import run_smoke
@@ -47,6 +47,7 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_env_file()
     args = _parser().parse_args(argv)
     try:
         if args.command == "smoke":

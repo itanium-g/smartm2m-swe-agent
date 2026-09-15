@@ -17,7 +17,7 @@ that is an explicit infrastructure state, not a fabricated score.
 | Stock reference boundary | PASS | pinned `mini-extra` subprocess, no vendored edits |
 | Custom recovery/validation | PASS | typed tools, checkpoints, rollback, loop detection, clean replay |
 | Official evaluator boundary | PASS | pinned SWE-bench subprocess and conservative parser |
-| Real paired score/lift | BLOCKED | Docker and `DEEPINFRA_API_KEY` unavailable here |
+| Real paired score/lift | BLOCKED | Docker unavailable in this environment |
 | Evidence bundle | PARTIAL | synthetic smoke and infrastructure-probe evidence are retained; primary bundle awaits run |
 | Public repository | PASS | GitHub visibility verified public at `itanium-g/smartm2m-swe-agent` |
 
@@ -26,7 +26,7 @@ that is an explicit infrastructure state, not a fabricated score.
 ```bash
 python -m pip install -e ".[dev]"
 python -m pip install -r requirements-evaluation.txt
-export DEEPINFRA_API_KEY="..."
+export GROQ_API_KEY="..."
 smartm2m reproduce --config configs/experiment.lock.yaml --run-id track3-primary
 ```
 

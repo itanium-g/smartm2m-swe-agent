@@ -11,8 +11,9 @@ environment:
   timeout: 120
 model:
   model_kwargs:
-    api_base: https://api.deepinfra.com/v1
+    api_base: https://api.groq.com/openai/v1
     temperature: 0
     seed: 42
     max_tokens: 8192
     timeout: 120
+  cost_tracking: ignore_errors

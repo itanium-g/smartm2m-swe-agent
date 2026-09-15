@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 import urllib.error
 import urllib.request
 from collections.abc import Iterable
 from typing import Any
 
-from .config import ModelConfig
+from .config import ModelConfig, load_env_file
 from .protocol import ModelResponse, ToolCall, Usage
 
 
@@ -57,7 +58,10 @@ class OpenAICompatibleModel:
         max_tokens: int,
     ) -> ModelResponse:
         self.logical_requests += 1
+        load_env_file()
         key = os.environ.get(self.config.api_key_env)
+        if not key and self.config.api_key_env == "GROQ_API_KEY":
+            key = os.environ.get("OPENAI_API_KEY")
         if not key:
             raise ModelError(f"missing model credential environment variable: {self.config.api_key_env}")
         payload: dict[str, Any] = {
@@ -84,7 +88,8 @@ class OpenAICompatibleModel:
             method="POST",
         )
         last_error: Exception | None = None
-        for attempt in range(self.config.max_retries + 1):
+        max_attempts = max(self.config.max_retries, 15) if self.config.provider == "groq" else self.config.max_retries
+        for attempt in range(max_attempts + 1):
             self.request_attempts += 1
             try:
                 with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
@@ -93,8 +98,23 @@ class OpenAICompatibleModel:
             except urllib.error.HTTPError as exc:
                 raw_error = exc.read().decode("utf-8", errors="replace")
                 last_error = ModelError(f"provider HTTP {exc.code}: {raw_error[:1000]}")
-                if exc.code not in {408, 409, 429, 500, 502, 503, 504} or attempt >= self.config.max_retries:
+                allowed_codes = {408, 409, 429, 500, 502, 503, 504}
+                if exc.code not in allowed_codes or attempt >= max_attempts:
                     raise last_error from exc
+                sleep_seconds = min(2**attempt, 15)
+                if exc.headers and exc.headers.get("Retry-After"):
+                    try:
+                        sleep_seconds = min(float(exc.headers["Retry-After"]), 60.0)
+                    except ValueError:
+                        pass
+                match = re.search(r"try again in ([0-9.]+)s", raw_error)
+                if match:
+                    try:
+                        sleep_seconds = max(sleep_seconds, float(match.group(1)))
+                    except ValueError:
+                        pass
+                time.sleep(sleep_seconds + 1.0)
+                continue
             except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
                 last_error = ModelError(f"provider transport/JSON error: {exc}")
                 if attempt >= self.config.max_retries:

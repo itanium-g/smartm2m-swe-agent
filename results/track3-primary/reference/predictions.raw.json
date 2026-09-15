@@ -1,0 +1,42 @@
+{
+  "django__django-11815": {
+    "model_name_or_path": "openai/openai/gpt-oss-120b",
+    "instance_id": "django__django-11815",
+    "model_patch": ""
+  },
+  "django__django-11964": {
+    "model_name_or_path": "openai/openai/gpt-oss-120b",
+    "instance_id": "django__django-11964",
+    "model_patch": ""
+  },
+  "django__django-11999": {
+    "model_name_or_path": "openai/openai/gpt-oss-120b",
+    "instance_id": "django__django-11999",
+    "model_patch": ""
+  },
+  "django__django-12039": {
+    "model_name_or_path": "openai/openai/gpt-oss-120b",
+    "instance_id": "django__django-12039",
+    "model_patch": ""
+  },
+  "django__django-12262": {
+    "model_name_or_path": "openai/openai/gpt-oss-120b",
+    "instance_id": "django__django-12262",
+    "model_patch": ""
+  },
+  "django__django-12273": {
+    "model_name_or_path": "openai/openai/gpt-oss-120b",
+    "instance_id": "django__django-12273",
+    "model_patch": ""
+  },
+  "django__django-12304": {
+    "model_name_or_path": "openai/openai/gpt-oss-120b",
+    "instance_id": "django__django-12304",
+    "model_patch": ""
+  },
+  "sphinx-doc__sphinx-8551": {
+    "model_name_or_path": "openai/openai/gpt-oss-120b",
+    "instance_id": "sphinx-doc__sphinx-8551",
+    "model_patch": ""
+  }
+}

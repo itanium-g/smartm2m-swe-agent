@@ -1,0 +1,25 @@
+{
+  "status": "completed",
+  "command": [
+    "/usr/bin/python3",
+    "-m",
+    "swebench.harness.run_evaluation",
+    "--dataset_name",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/dataset-evaluation",
+    "--split",
+    "test",
+    "--predictions_path",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/custom/predictions.jsonl",
+    "--max_workers",
+    "1",
+    "--run_id",
+    "track3-primary-custom"
+  ],
+  "returncode": 0,
+  "duration_seconds": 3.005520389000594,
+  "stdout": "No instances to run.\nTotal instances: 50\nInstances submitted: 8\nInstances completed: 0\nInstances incomplete: 42\nInstances resolved: 0\nInstances unresolved: 0\nInstances with likely infrastructure failures: 0\nInstances with ambiguous failures: 0\nInstances with empty patches: 8\nInstances with errors: 0\nUnstopped containers: 0\nUnremoved images: 0\nReport written to logs/evaluation/track3-primary-custom/results.json\n",
+  "stderr": "",
+  "run_id": "track3-primary-custom",
+  "reason": "",
+  "working_directory": "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/evaluation/custom"
+}

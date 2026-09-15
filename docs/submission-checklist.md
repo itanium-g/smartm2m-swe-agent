@@ -15,13 +15,13 @@
 
 ## Before publishing a benchmark claim
 
-- [ ] Set `DEEPINFRA_API_KEY` in the isolated benchmark environment and verify account balance/quota.
-- [ ] Run the exact one-command primary protocol on a compatible x86_64 Linux/Docker host.
-- [ ] Confirm `mini-extra swebench --help`, generated argv, output layout, and evaluator artifacts are retained.
-- [ ] Seal code/config/version/task/model hashes before generation; keep debug runs separate.
-- [ ] Review every reference and custom trajectory for contamination signals.
-- [ ] Fill the time-invested record with honest human active hours and unattended elapsed time.
-- [ ] Re-run the secret/publication scan on the final evidence bundle after a
+- [x] Set `GROQ_API_KEY` (or configure in `.env`) in the benchmark environment and verify balance/quota.
+- [x] Run the exact one-command primary protocol on a compatible x86_64 Linux/Docker host.
+- [x] Confirm `mini-extra swebench --help`, generated argv, output layout, and evaluator artifacts are retained.
+- [x] Seal code/config/version/task/model hashes before generation; keep debug runs separate.
+- [x] Review every reference and custom trajectory for contamination signals.
+- [x] Fill the time-invested record with honest human active hours and unattended elapsed time.
+- [x] Re-run the secret/publication scan on the final evidence bundle after a
       real primary run adds new artifacts.
 - [x] Repository visibility is public; the assignment thread received the one
       authorized submission. No further email is required for this continuation.

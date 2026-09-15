@@ -4,8 +4,8 @@ Only the following actions remain outside the Work environment or require the
 user’s judgment. Ordinary engineering, testing, pinning, and documentation
 work is complete.
 
-1. **Provider secret and quota — urgent.** Set `DEEPINFRA_API_KEY` only in the
-   isolated benchmark environment and confirm sufficient DeepInfra balance.
+1. **Provider secret and quota.** Set `GROQ_API_KEY` (or configure it in `.env`)
+   in the isolated benchmark environment and confirm sufficient Groq balance/quota.
    Never add it to Git or result logs.
 
 2. **Compatible benchmark host — urgent if Work remains Dockerless.** Run on
@@ -15,7 +15,7 @@ work is complete.
    ```bash
    python -m pip install -e ".[dev]"
    python -m pip install -r requirements-evaluation.txt
-   export DEEPINFRA_API_KEY="..."
+   export GROQ_API_KEY="..."
    smartm2m reproduce --config configs/experiment.lock.yaml --run-id track3-primary
    ```
 

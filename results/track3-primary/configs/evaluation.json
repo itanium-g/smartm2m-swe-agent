@@ -1,0 +1,127 @@
+{
+  "status": "frozen",
+  "source": {
+    "dataset_name": "MariusHobbhahn/swe-bench-verified-mini",
+    "dataset_revision": "b316c349947c29963fce3f4a65967c9807a4b673",
+    "split": "test",
+    "selection_file": "tasks/evaluation.selection.json",
+    "selection_algorithm": "sorted instance IDs; random.Random(seed).sample(pool, count)",
+    "seed": 42,
+    "selected_ids_sha256": "395f2adfaf4b9b2c5a129b7de83fe886d4f3b281fb9588d5802e2dfcaa717dfb"
+  },
+  "expected_count": 8,
+  "tasks": [
+    {
+      "instance_id": "sphinx-doc__sphinx-8551",
+      "problem_statement": ":type: and :rtype: gives false ambiguous class lookup warnings\n**Describe the bug**\r\nThe implicit xrefs created by the info fields ``:type:`` and ``:rtype:`` seems to do lookup differently than explicit xref roles. For unqualified names it seems like they search for the name in every (sub)module instead of in the current module and then parent modules.\r\n\r\n**To Reproduce**\r\n```rst\r\n.. py:class:: mod.A\r\n.. py:class:: mod.submod.A\r\n\r\n.. py:function:: f()\r\n\r\n\t- :py:class:`mod.A`\r\n\t- :py:class:`mod.submod.A`\r\n\r\n\t:param mod.A a:\r\n\t:param mod.submod.A b:\r\n\t:rtype: mod.A\r\n\t:rtype: mod.submod.A\r\n\r\n.. py:currentmodule:: mod\r\n\r\n.. py:function:: f()\r\n\r\n\t- :py:class:`A`\r\n\t- :py:class:`mod.A`\r\n\t- :py:class:`mod.submod.A`\r\n\r\n\t:param A a:\r\n\t:param mod.A b:\r\n\t:param mod.submod.A c:\r\n\t:rtype: A\r\n\t:rtype: mod.A\r\n\t:rtype: mod.submod.A\r\n\r\n.. py:currentmodule:: mod.submod\r\n\r\n.. py:function:: f()\r\n\r\n\t- :py:class:`A`\r\n\t- :py:class:`mod.A`\r\n\t- :py:class:`mod.submod.A`\r\n\r\n\t:param A a: BUG: links to mod.A instead of mod.submod.A\r\n\t:param mod.A b:\r\n\t:param mod.submod.A c:\r\n\t:rtype: A\r\n\t:rtype: mod.A\r\n\t:rtype: mod.submod.A\r\n```\r\ngives the warnings\r\n```\r\nindex.rst:28: WARNING: more than one target found for cross-reference 'A': mod.A, mod.submod.A\r\nindex.rst:28: WARNING: more than one target found for cross-reference 'A': mod.A, mod.submod.A\r\nindex.rst:43: WARNING: more than one target found for cross-reference 'A': mod.A, mod.submod.A\r\nindex.rst:43: WARNING: more than one target found for cross-reference 'A': mod.A, mod.submod.A\r\n```\r\nwhich refer to the 4 unqualified type names ``A``.\r\nThe ``:param:`` annotated with ``BUG`` as well as the corresponding ``rtype`` gets resolved to ``mod.A``.\r\n\r\n**Expected behavior**\r\nNo warnings, and the two mentioned types should resolve to ``mod.submod.A``.\r\n\r\n**Environment info**\r\n- Sphinx version: tested both with v3.3 and with master\n",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "57ed10c68057c96491acbd3e62254ccfaf9e3861",
+      "repo_url": "https://github.com/sphinx-doc/sphinx.git",
+      "split": "test",
+      "image": "docker.io/swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8551:latest",
+      "test_commands": [
+        "python -m pytest -q"
+      ],
+      "setup_commands": [],
+      "test_profile": "pytest"
+    },
+    {
+      "instance_id": "django__django-11999",
+      "problem_statement": "Cannot override get_FOO_display() in Django 2.2+.\nDescription\n\t\nI cannot override the get_FIELD_display function on models since version 2.2. It works in version 2.1.\nExample:\nclass FooBar(models.Model):\n\tfoo_bar = models.CharField(_(\"foo\"), choices=[(1, 'foo'), (2, 'bar')])\n\tdef __str__(self):\n\t\treturn self.get_foo_bar_display() # This returns 'foo' or 'bar' in 2.2, but 'something' in 2.1\n\tdef get_foo_bar_display(self):\n\t\treturn \"something\"\nWhat I expect is that I should be able to override this function.\n",
+      "repo": "django/django",
+      "base_commit": "84633905273fc916e3d17883810d9969c03f73c2",
+      "repo_url": "https://github.com/django/django.git",
+      "split": "test",
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-11999:latest",
+      "test_commands": [
+        "python tests/runtests.py --verbosity 1"
+      ],
+      "setup_commands": [],
+      "test_profile": "django-runtests"
+    },
+    {
+      "instance_id": "django__django-11815",
+      "problem_statement": "Migrations uses value of enum object instead of its name.\nDescription\n\t \n\t\t(last modified by oasl)\n\t \nWhen using Enum object as a default value for a CharField, the generated migration file uses the value of the Enum object instead of the its name. This causes a problem when using Django translation on the value of the Enum object. \nThe problem is that, when the Enum object value get translated to the users language, the old migration files raise an error stating that the Enum does not have the corresponding value. (because the Enum value is translated to another language)\nExample:\nLet say we have this code in models.py:\nfrom enum import Enum\nfrom django.utils.translation import gettext_lazy as _\nfrom django.db import models\nclass Status(Enum):\n\tGOOD = _('Good') # 'Good' will be translated\n\tBAD = _('Bad') # 'Bad' will be translated\n\tdef __str__(self):\n\t\treturn self.name\nclass Item(models.Model):\n\tstatus = models.CharField(default=Status.GOOD, max_length=128)\nIn the generated migration file, the code will be:\n...\n('status', models.CharField(default=Status('Good'), max_length=128))\n...\nAfter the translation, 'Good' will be translated to another word and it will not be part of the Status Enum class any more, so the migration file will raise the error on the previous line:\nValueError: 'Good' is not a valid Status\nShouldn't the code generated by the migration uses the name of the Status Enum 'GOOD', not the value of it, since it is changeable?\nIt should be:\n('status', models.CharField(default=Status['GOOD'], max_length=128))\nThis will be correct regardless of the translated word\n",
+      "repo": "django/django",
+      "base_commit": "e02f67ef2d03d48128e7a118bf75f0418e24e8ac",
+      "repo_url": "https://github.com/django/django.git",
+      "split": "test",
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-11815:latest",
+      "test_commands": [
+        "python tests/runtests.py --verbosity 1"
+      ],
+      "setup_commands": [],
+      "test_profile": "django-runtests"
+    },
+    {
+      "instance_id": "django__django-12304",
+      "problem_statement": "Enumeration Types are not usable in templates.\nDescription\n\t \n\t\t(last modified by Mariusz Felisiak)\n\t \nThe new ​enumeration types are great but can't be used in Django templates due to their being callable. For example this doesn't work:\n{% if student.year_in_school == YearInSchool.FRESHMAN %}\nThis is because YearInSchool, being a class, is callable, and Django Templates always call callables with no arguments. The call fails because the required value argument is missing.\nThe easy solution would be to declare do_not_call_in_templates = True on the various Choices classes.\n",
+      "repo": "django/django",
+      "base_commit": "4c1b401e8250f9f520b3c7dc369554477ce8b15a",
+      "repo_url": "https://github.com/django/django.git",
+      "split": "test",
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-12304:latest",
+      "test_commands": [
+        "python tests/runtests.py --verbosity 1"
+      ],
+      "setup_commands": [],
+      "test_profile": "django-runtests"
+    },
+    {
+      "instance_id": "django__django-12273",
+      "problem_statement": "Resetting primary key for a child model doesn't work.\nDescription\n\t\nIn the attached example code setting the primary key to None does not work (so that the existing object is overwritten on save()).\nThe most important code fragments of the bug example:\nfrom django.db import models\nclass Item(models.Model):\n\t# uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)\n\tuid = models.AutoField(primary_key=True, editable=False)\n\tf = models.BooleanField(default=False)\n\tdef reset(self):\n\t\tself.uid = None\n\t\tself.f = False\nclass Derived(Item):\n\tpass\nclass SaveTestCase(TestCase):\n\tdef setUp(self):\n\t\tself.derived = Derived.objects.create(f=True) # create the first object\n\t\titem = Item.objects.get(pk=self.derived.pk)\n\t\tobj1 = item.derived\n\t\tobj1.reset()\n\t\tobj1.save() # the first object is overwritten\n\tdef test_f_true(self):\n\t\tobj = Item.objects.get(pk=self.derived.pk)\n\t\tself.assertTrue(obj.f)\nDjango 2.1.2\n",
+      "repo": "django/django",
+      "base_commit": "927c903f3cd25c817c21738328b53991c035b415",
+      "repo_url": "https://github.com/django/django.git",
+      "split": "test",
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-12273:latest",
+      "test_commands": [
+        "python tests/runtests.py --verbosity 1"
+      ],
+      "setup_commands": [],
+      "test_profile": "django-runtests"
+    },
+    {
+      "instance_id": "django__django-12262",
+      "problem_statement": "Custom template tags raise TemplateSyntaxError when keyword-only arguments with defaults are provided.\nDescription\n\t \n\t\t(last modified by P-Seebauer)\n\t \nWhen creating simple tags without variable keyword args, but an keyword argument with a default value. It's not possible to supply any other variable.\n@register.simple_tag\ndef hello(*, greeting='hello'):\n\treturn f'{greeting} world'\n{% hello greeting='hi' %}\nRaises “'hello' received unexpected keyword argument 'greeting'”\nAlso supplying a keyword argument a second time raises the wrong error message:\n#tag\n@register.simple_tag\ndef hi(*, greeting):\n\treturn f'{greeting} world'\n{% hi greeting='hi' greeting='hello' %}\nRaises “'hi' received unexpected keyword argument 'greeting'”\ninstead of \"'hi' received multiple values for keyword argument 'greeting'\"\nSame goes for inclusion tags (is the same code) I already have a fix ready, will push it after creating the ticket (that I have a ticket# for the commit).\nIs actually for all versions since the offending line is from 2.0…\n",
+      "repo": "django/django",
+      "base_commit": "69331bb851c34f05bc77e9fc24020fe6908b9cd5",
+      "repo_url": "https://github.com/django/django.git",
+      "split": "test",
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-12262:latest",
+      "test_commands": [
+        "python tests/runtests.py --verbosity 1"
+      ],
+      "setup_commands": [],
+      "test_profile": "django-runtests"
+    },
+    {
+      "instance_id": "django__django-12039",
+      "problem_statement": "Use proper whitespace in CREATE INDEX statements\nDescription\n\t \n\t\t(last modified by Hannes Ljungberg)\n\t \nCreating an index through:\nindex = Index(\n\tfields=['-name’],\n\tname='idx'\n)\nWill generate the valid but not so pretty CREATE INDEX statement: \nCREATE INDEX \"idx\" ON \"schema_author\" (\"name\"DESC)\nThe following would be expected:\nCREATE INDEX \"idx\" ON \"schema_author\" (\"name\" DESC)\nThis was partially fixed for indexes using opclasses in https://code.djangoproject.com/ticket/30903#ticket but it introduced a new quirk when opclasses is used without explicit ordering:\nindex = Index(\n\tfields=['name’],\n\tname='idx'\n\topclasses=['text_pattern_ops’]\n)\nWill result in:\nCREATE INDEX \"idx\" ON \"schema_author\" (“name” text_pattern_ops )\nNote the whitespace after text_pattern_ops. When used with a descending order it will look correct. \nUnfortunately in the fix in #30903 it was assumed that the col_suffixes passed to django.db.backends.ddl_references.Columns would be empty for ascending order but instead it will contain empty strings and thus causing this bug. See: ​https://github.com/django/django/blob/master/django/db/backends/ddl_references.py#L87\nThe expected output would be:\nCREATE INDEX \"idx\" ON \"schema_author\" (“name” text_pattern_ops)\n",
+      "repo": "django/django",
+      "base_commit": "58c1acb1d6054dfec29d0f30b1033bae6ef62aec",
+      "repo_url": "https://github.com/django/django.git",
+      "split": "test",
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-12039:latest",
+      "test_commands": [
+        "python tests/runtests.py --verbosity 1"
+      ],
+      "setup_commands": [],
+      "test_profile": "django-runtests"
+    },
+    {
+      "instance_id": "django__django-11964",
+      "problem_statement": "The value of a TextChoices/IntegerChoices field has a differing type\nDescription\n\t\nIf we create an instance of a model having a CharField or IntegerField with the keyword choices pointing to IntegerChoices or TextChoices, the value returned by the getter of the field will be of the same type as the one created by enum.Enum (enum value).\nFor example, this model:\nfrom django.db import models\nfrom django.utils.translation import gettext_lazy as _\nclass MyChoice(models.TextChoices):\n\tFIRST_CHOICE = \"first\", _(\"The first choice, it is\")\n\tSECOND_CHOICE = \"second\", _(\"The second choice, it is\")\nclass MyObject(models.Model):\n\tmy_str_value = models.CharField(max_length=10, choices=MyChoice.choices)\nThen this test:\nfrom django.test import TestCase\nfrom testing.pkg.models import MyObject, MyChoice\nclass EnumTest(TestCase):\n\tdef setUp(self) -> None:\n\t\tself.my_object = MyObject.objects.create(my_str_value=MyChoice.FIRST_CHOICE)\n\tdef test_created_object_is_str(self):\n\t\tmy_object = self.my_object\n\t\tself.assertIsInstance(my_object.my_str_value, str)\n\t\tself.assertEqual(str(my_object.my_str_value), \"first\")\n\tdef test_retrieved_object_is_str(self):\n\t\tmy_object = MyObject.objects.last()\n\t\tself.assertIsInstance(my_object.my_str_value, str)\n\t\tself.assertEqual(str(my_object.my_str_value), \"first\")\nAnd then the results:\n(django30-venv) ➜ django30 ./manage.py test\nCreating test database for alias 'default'...\nSystem check identified no issues (0 silenced).\nF.\n======================================================================\nFAIL: test_created_object_is_str (testing.tests.EnumTest)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n File \"/Users/mikailkocak/Development/django30/testing/tests.py\", line 14, in test_created_object_is_str\n\tself.assertEqual(str(my_object.my_str_value), \"first\")\nAssertionError: 'MyChoice.FIRST_CHOICE' != 'first'\n- MyChoice.FIRST_CHOICE\n+ first\n----------------------------------------------------------------------\nRan 2 tests in 0.002s\nFAILED (failures=1)\nWe notice when invoking __str__(...) we don't actually get the value property of the enum value which can lead to some unexpected issues, especially when communicating to an external API with a freshly created instance that will send MyEnum.MyValue, and the one that was retrieved would send my_value.\n",
+      "repo": "django/django",
+      "base_commit": "fc2b1cc926e34041953738e58fa6ad3053059b22",
+      "repo_url": "https://github.com/django/django.git",
+      "split": "test",
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-11964:latest",
+      "test_commands": [
+        "python tests/runtests.py --verbosity 1"
+      ],
+      "setup_commands": [],
+      "test_profile": "django-runtests"
+    }
+  ]
+}

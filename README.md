@@ -9,7 +9,7 @@ primary attempt budget. Tracks 1 and 2 are intentionally out of scope.
 Repository visibility is public at `itanium-g/smartm2m-swe-agent` (verified
 2026-09-14). The implementation and frozen protocol are complete. No real
 SWE-bench score or lift is claimed yet: this Work environment has no Docker
-daemon and no `DEEPINFRA_API_KEY`, so a valid eight-task primary run could not
+daemon, so a valid eight-task primary run could not
 be completed.
 The synthetic `smartm2m smoke` result is plumbing evidence only.
 
@@ -58,11 +58,11 @@ python -m pip install -e ".[dev]"
 python -m pip install -r requirements-evaluation.txt
 ```
 
-Set the provider secret outside the repository, then run the one-command
+Set the provider secret outside the repository (or in `.env`), then run the one-command
 Track 3 protocol:
 
 ```bash
-export DEEPINFRA_API_KEY="..."
+export GROQ_API_KEY="..."
 smartm2m reproduce --config configs/experiment.lock.yaml --run-id track3-primary
 ```
 
@@ -79,12 +79,13 @@ full evaluator dataset only after both prediction files are sealed. This keeps
 the stock reference CLI compatible with the pinned revision without passing
 gold fields to either generation prompt.
 
-The lock uses `openai/gpt-oss-120b` through the configurable
-`https://api.deepinfra.com/v1` OpenAI-compatible endpoint, temperature `0`,
+The lock uses `openai/gpt-oss-120b` through Groq's
+`https://api.groq.com/openai/v1` OpenAI-compatible endpoint, temperature `0`,
 requested seed `42`, 8,192 completion tokens per call, 60 custom turns / 60
 reference steps, one primary attempt, and a 2,700-second arm wall limit.
-Provider dollar pricing is intentionally unset; parity is enforced by the
-matched turn/token caps and observed token usage/cost is recorded separately.
+Provider pricing is configured at \$0.15 / \$0.60 per million input/output tokens;
+parity is enforced by the matched turn/token caps and observed token usage/cost
+is recorded separately.
 
 ## What was built
 

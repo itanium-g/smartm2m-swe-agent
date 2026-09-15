@@ -1,0 +1,8 @@
+{"arm": "custom", "instance_id": "sphinx-doc__sphinx-8551", "model_requests": 3, "model_attempts": 4, "prompt_tokens": 6431, "completion_tokens": 129, "total_tokens": 6560, "estimated_cost_usd": 0.0010420499999999999}
+{"arm": "custom", "instance_id": "django__django-11999", "model_requests": 5, "model_attempts": 6, "prompt_tokens": 8750, "completion_tokens": 203, "total_tokens": 8953, "estimated_cost_usd": 0.0014343}
+{"arm": "custom", "instance_id": "django__django-11815", "model_requests": 7, "model_attempts": 11, "prompt_tokens": 25507, "completion_tokens": 1757, "total_tokens": 27264, "estimated_cost_usd": 0.00488025}
+{"arm": "custom", "instance_id": "django__django-12304", "model_requests": 3, "model_attempts": 3, "prompt_tokens": 1911, "completion_tokens": 113, "total_tokens": 2024, "estimated_cost_usd": 0.00035444999999999997}
+{"arm": "custom", "instance_id": "django__django-12273", "model_requests": 10, "model_attempts": 15, "prompt_tokens": 14275, "completion_tokens": 981, "total_tokens": 15256, "estimated_cost_usd": 0.00272985}
+{"arm": "custom", "instance_id": "django__django-12262", "model_requests": 10, "model_attempts": 16, "prompt_tokens": 29672, "completion_tokens": 641, "total_tokens": 30313, "estimated_cost_usd": 0.0048354}
+{"arm": "custom", "instance_id": "django__django-12039", "model_requests": 3, "model_attempts": 3, "prompt_tokens": 2293, "completion_tokens": 118, "total_tokens": 2411, "estimated_cost_usd": 0.00041474999999999997}
+{"arm": "custom", "instance_id": "django__django-11964", "model_requests": 8, "model_attempts": 11, "prompt_tokens": 13556, "completion_tokens": 391, "total_tokens": 13947, "estimated_cost_usd": 0.002268}

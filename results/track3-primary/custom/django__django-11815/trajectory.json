@@ -1,0 +1,324 @@
+{
+  "events": [
+    {
+      "content": "",
+      "finish_reason": "tool_calls",
+      "kind": "model_response",
+      "timestamp": 1789485222.8662374,
+      "tool_calls": [
+        {
+          "arguments": {
+            "max_results": 20,
+            "path": "",
+            "query": "Enum"
+          },
+          "id": "fc_edc1c2f3-09cc-4843-8b8a-f85235e982fa",
+          "name": "search"
+        }
+      ],
+      "turn": 1,
+      "usage": {
+        "completion_time": 0.156141972,
+        "completion_tokens": 72,
+        "completion_tokens_details": {
+          "reasoning_tokens": 33
+        },
+        "prompt_time": 0.116008565,
+        "prompt_tokens": 1093,
+        "queue_time": 0.341869485,
+        "total_time": 0.272150537,
+        "total_tokens": 1165
+      }
+    },
+    {
+      "kind": "tool_result",
+      "name": "search",
+      "result": {
+        "content": "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/docs/ref/models/fields.txt:183:Enumeration types\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/docs/ref/models/fields.txt:212:* Enum member values are a tuple of arguments to use when constructing the\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/docs/ref/models/fields.txt:261:It is also possible to make use of the `Enum Functional API\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/docs/ref/models/fields.txt:288:- Enumeration types do not support :ref:`named groups\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/docs/topics/migrations.txt:700:- ``enum.Enum`` instances\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/docs/topics/migrations.txt:705:- Enumeration types (e.g. ``TextChoices`` or ``IntegerChoices``) instances.\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/docs/releases/3.0.txt:84:Enumerations for model field choices\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/docs/releases/3.0.txt:93:members. See :ref:`Enumeration types <field-choices-enum-types>` for more\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/docs/releases/1.10.txt:365:* Added support for serialization of ``enum.Enum`` objects.\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/django/db/migrations/serializer.py:119:class EnumSerializer(BaseSerializer):\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/django/db/migrations/serializer.py:288:        enum.Enum: EnumSerializer,\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/django/db/models/enums.py:8:class ChoicesMeta(enum.EnumMeta):\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/django/db/models/enums.py:37:        if not isinstance(member, enum.Enum):\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/django/db/models/enums.py:61:class Choices(enum.Enum, metaclass=ChoicesMeta):\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/js_tests/qunit/qunit.js:2042:\t\t\t\t\tvar keys, key, val, i, nonEnumerableProperties,\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/js_tests/qunit/qunit.js:2056:\t\t\t\t\tnonEnumerableProperties = [ \"message\", \"name\" ];\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/js_tests/qunit/qunit.js:2057:\t\t\t\t\tfor ( i in nonEnumerableProperties ) {\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/js_tests/qunit/qunit.js:2058:\t\t\t\t\t\tkey = nonEnumerableProperties[ i ];\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/tests/model_enums/tests.py:136:            class InvalidArgumentEnum(models.IntegerChoices):\n/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/workspaces/django__django-11815-rsuce4xr/tests/migrations/test_writer.py:256:        class TextEnum(enum.Enum):",
+        "metadata": {
+          "count": 20
+        },
+        "ok": true
+      },
+      "timestamp": 1789485223.076099,
+      "tool_call_id": "fc_edc1c2f3-09cc-4843-8b8a-f85235e982fa",
+      "turn": 1
+    },
+    {
+      "content": "",
+      "finish_reason": "tool_calls",
+      "kind": "model_response",
+      "timestamp": 1789485223.5176444,
+      "tool_calls": [
+        {
+          "arguments": {
+            "line_end": 400,
+            "line_start": 1,
+            "path": "django/db/migrations/serializer.py"
+          },
+          "id": "fc_0617169f-5655-478c-b1cd-a8432bd063fa",
+          "name": "read_file"
+        }
+      ],
+      "turn": 2,
+      "usage": {
+        "completion_time": 0.126001732,
+        "completion_tokens": 56,
+        "completion_tokens_details": {
+          "reasoning_tokens": 43
+        },
+        "prompt_time": 0.110864959,
+        "prompt_tokens": 2265,
+        "queue_time": 0.05540348,
+        "total_time": 0.236866691,
+        "total_tokens": 2321
+      }
+    },
+    {
+      "kind": "tool_result",
+      "name": "read_file",
+      "result": {
+        "content": "ToolRunner.read_file() got an unexpected keyword argument 'line_end'",
+        "metadata": {
+          "error": "TypeError"
+        },
+        "ok": false
+      },
+      "timestamp": 1789485223.517708,
+      "tool_call_id": "fc_0617169f-5655-478c-b1cd-a8432bd063fa",
+      "turn": 2
+    },
+    {
+      "content": "",
+      "finish_reason": "tool_calls",
+      "kind": "model_response",
+      "timestamp": 1789485224.236323,
+      "tool_calls": [
+        {
+          "arguments": {
+            "end_line": 200,
+            "path": "django/db/migrations/serializer.py",
+            "start_line": 1
+          },
+          "id": "fc_3d3aaef1-7951-49bf-afff-ac9ade1ad65b",
+          "name": "read_file"
+        }
+      ],
+      "turn": 3,
+      "usage": {
+        "completion_time": 0.117609507,
+        "completion_tokens": 55,
+        "completion_tokens_details": {
+          "reasoning_tokens": 17
+        },
+        "prompt_time": 0.147057611,
+        "prompt_tokens": 2344,
+        "queue_time": 0.325282235,
+        "total_time": 0.264667118,
+        "total_tokens": 2399
+      }
+    },
+    {
+      "kind": "tool_result",
+      "name": "read_file",
+      "result": {
+        "content": "1: import builtins\n2: import collections.abc\n3: import datetime\n4: import decimal\n5: import enum\n6: import functools\n7: import math\n8: import re\n9: import types\n10: import uuid\n11: \n12: from django.conf import SettingsReference\n13: from django.db import models\n14: from django.db.migrations.operations.base import Operation\n15: from django.db.migrations.utils import COMPILED_REGEX_TYPE, RegexObject\n16: from django.utils.functional import LazyObject, Promise\n17: from django.utils.timezone import utc\n18: from django.utils.version import get_docs_version\n19: \n20: \n21: class BaseSerializer:\n22:     def __init__(self, value):\n23:         self.value = value\n24: \n25:     def serialize(self):\n26:         raise NotImplementedError('Subclasses of BaseSerializer must implement the serialize() method.')\n27: \n28: \n29: class BaseSequenceSerializer(BaseSerializer):\n30:     def _format(self):\n31:         raise NotImplementedError('Subclasses of BaseSequenceSerializer must implement the _format() method.')\n32: \n33:     def serialize(self):\n34:         imports = set()\n35:         strings = []\n36:         for item in self.value:\n37:             item_string, item_imports = serializer_factory(item).serialize()\n38:             imports.update(item_imports)\n39:             strings.append(item_string)\n40:         value = self._format()\n41:         return value % (\", \".join(strings)), imports\n42: \n43: \n44: class BaseSimpleSerializer(BaseSerializer):\n45:     def serialize(self):\n46:         return repr(self.value), set()\n47: \n48: \n49: class ChoicesSerializer(BaseSerializer):\n50:     def serialize(self):\n51:         return serializer_factory(self.value.value).serialize()\n52: \n53: \n54: class DateTimeSerializer(BaseSerializer):\n55:     \"\"\"For datetime.*, except datetime.datetime.\"\"\"\n56:     def serialize(self):\n57:         return repr(self.value), {'import datetime'}\n58: \n59: \n60: class DatetimeDatetimeSerializer(BaseSerializer):\n61:     \"\"\"For datetime.datetime.\"\"\"\n62:     def serialize(self):\n63:         if self.value.tzinfo is not None and self.value.tzinfo != utc:\n64:             self.value = self.value.astimezone(utc)\n65:         imports = [\"import datetime\"]\n66:         if self.value.tzinfo is not None:\n67:             imports.append(\"from django.utils.timezone import utc\")\n68:         return repr(self.value).replace('<UTC>', 'utc'), set(imports)\n69: \n70: \n71: class DecimalSerializer(BaseSerializer):\n72:     def serialize(self):\n73:         return repr(self.value), {\"from decimal import Decimal\"}\n74: \n75: \n76: class DeconstructableSerializer(BaseSerializer):\n77:     @staticmethod\n78:     def serialize_deconstructed(path, args, kwargs):\n79:         name, imports = DeconstructableSerializer._serialize_path(path)\n80:         strings = []\n81:         for arg in args:\n82:             arg_string, arg_imports = serializer_factory(arg).serialize()\n83:             strings.append(arg_string)\n84:             imports.update(arg_imports)\n85:         for kw, arg in sorted(kwargs.items()):\n86:             arg_string, arg_imports = serializer_factory(arg).serialize()\n87:             imports.update(arg_imports)\n88:             strings.append(\"%s=%s\" % (kw, arg_string))\n89:         return \"%s(%s)\" % (name, \", \".join(strings)), imports\n90: \n91:     @staticmethod\n92:     def _serialize_path(path):\n93:         module, name = path.rsplit(\".\", 1)\n94:         if module == \"django.db.models\":\n95:             imports = {\"from django.db import models\"}\n96:             name = \"models.%s\" % name\n97:         else:\n98:             imports = {\"import %s\" % module}\n99:             name = path\n100:         return name, imports\n101: \n102:     def serialize(self):\n103:         return self.serialize_deconstructed(*self.value.deconstruct())\n104: \n105: \n106: class DictionarySerializer(BaseSerializer):\n107:     def serialize(self):\n108:         imports = set()\n109:         strings = []\n110:         for k, v in sorted(self.value.items()):\n111:             k_string, k_imports = serializer_factory(k).serialize()\n112:             v_string, v_imports = serializer_factory(v).serialize()\n113:             imports.update(k_imports)\n114:             imports.update(v_imports)\n115:             strings.append((k_string, v_string))\n116:         return \"{%s}\" % (\", \".join(\"%s: %s\" % (k, v) for k, v in strings)), imports\n117: \n118: \n119: class EnumSerializer(BaseSerializer):\n120:     def serialize(self):\n121:         enum_class = self.value.__class__\n122:         module = enum_class.__module__\n123:         v_string, v_imports = serializer_factory(self.value.value).serialize()\n124:         imports = {'import %s' % module, *v_imports}\n125:         return \"%s.%s(%s)\" % (module, enum_class.__name__, v_string), imports\n126: \n127: \n128: class FloatSerializer(BaseSimpleSerializer):\n129:     def serialize(self):\n130:         if math.isnan(self.value) or math.isinf(self.value):\n131:             return 'float(\"{}\")'.format(self.value), set()\n132:         return super().serialize()\n133: \n134: \n135: class FrozensetSerializer(BaseSequenceSerializer):\n136:     def _format(self):\n137:         return \"frozenset([%s])\"\n138: \n139: \n140: class FunctionTypeSerializer(BaseSerializer):\n141:     def serialize(self):\n142:         if getattr(self.value, \"__self__\", None) and isinstance(self.value.__self__, type):\n143:             klass = self.value.__self__\n144:             module = klass.__module__\n145:             return \"%s.%s.%s\" % (module, klass.__name__, self.value.__name__), {\"import %s\" % module}\n146:         # Further error checking\n147:         if self.value.__name__ == '<lambda>':\n148:             raise ValueError(\"Cannot serialize function: lambda\")\n149:         if self.value.__module__ is None:\n150:             raise ValueError(\"Cannot serialize function %r: No module\" % self.value)\n151: \n152:         module_name = self.value.__module__\n153: \n154:         if '<' not in self.value.__qualname__:  # Qualname can include <locals>\n155:             return '%s.%s' % (module_name, self.value.__qualname__), {'import %s' % self.value.__module__}\n156: \n157:         raise ValueError(\n158:             'Could not find function %s in %s.\\n' % (self.value.__name__, module_name)\n159:         )\n160: \n161: \n162: class FunctoolsPartialSerializer(BaseSerializer):\n163:     def serialize(self):\n164:         # Serialize functools.partial() arguments\n165:         func_string, func_imports = serializer_factory(self.value.func).serialize()\n166:         args_string, args_imports = serializer_factory(self.value.args).serialize()\n167:         keywords_string, keywords_imports = serializer_factory(self.value.keywords).serialize()\n168:         # Add any imports needed by arguments\n169:         imports = {'import functools', *func_imports, *args_imports, *keywords_imports}\n170:         return (\n171:             'functools.%s(%s, *%s, **%s)' % (\n172:                 self.value.__class__.__name__,\n173:                 func_string,\n174:                 args_string,\n175:                 keywords_string,\n176:             ),\n177:             imports,\n178:         )\n179: \n180: \n181: class IterableSerializer(BaseSerializer):\n182:     def serialize(self):\n183:         imports = set()\n184:         strings = []\n185:         for item in self.value:\n186:             item_string, item_imports = serializer_factory(item).serialize()\n187:             imports.update(item_imports)\n188:             strings.append(item_string)\n189:         # When len(strings)==0, the empty iterable should be serialized as\n190:         # \"()\", not \"(,)\" because (,) is invalid Python syntax.\n191:         value = \"(%s)\" if len(strings) != 1 else \"(%s,)\"\n192:         return value % (\", \".join(strings)), imports\n193: \n194: \n195: class ModelFieldSerializer(DeconstructableSerializer):\n196:     def serialize(self):\n197:         attr_name, path, args, kwargs = self.value.deconstruct()\n198:         return self.serialize_deconstructed(path, args, kwargs)\n199: \n200: ",
+        "metadata": {
+          "end_line": 200,
+          "path": "django/db/migrations/serializer.py",
+          "start_line": 1
+        },
+        "ok": true
+      },
+      "timestamp": 1789485224.2368493,
+      "tool_call_id": "fc_3d3aaef1-7951-49bf-afff-ac9ade1ad65b",
+      "turn": 3
+    },
+    {
+      "content": "",
+      "finish_reason": "tool_calls",
+      "kind": "model_response",
+      "timestamp": 1789485243.6362808,
+      "tool_calls": [
+        {
+          "arguments": {
+            "max_results": 20,
+            "path": "tests",
+            "query": "EnumSerializer"
+          },
+          "id": "fc_1b9f5a07-ce75-45b1-8a44-56d53672310c",
+          "name": "search"
+        }
+      ],
+      "turn": 4,
+      "usage": {
+        "completion_time": 0.480036092,
+        "completion_tokens": 231,
+        "completion_tokens_details": {
+          "reasoning_tokens": 220
+        },
+        "prompt_time": 0.211858048,
+        "prompt_tokens": 4607,
+        "queue_time": 0.403319877,
+        "total_time": 0.69189414,
+        "total_tokens": 4838
+      }
+    },
+    {
+      "kind": "tool_result",
+      "name": "search",
+      "result": {
+        "content": "(no matches)",
+        "metadata": {
+          "count": 0
+        },
+        "ok": true
+      },
+      "timestamp": 1789485243.669624,
+      "tool_call_id": "fc_1b9f5a07-ce75-45b1-8a44-56d53672310c",
+      "turn": 4
+    },
+    {
+      "content": "",
+      "finish_reason": "tool_calls",
+      "kind": "model_response",
+      "timestamp": 1789485281.8022091,
+      "tool_calls": [
+        {
+          "arguments": {
+            "patch": "*** Begin Patch\n*** Update File: django/db/migrations/serializer.py\n@@\n class EnumSerializer(BaseSerializer):\n     def serialize(self):\n-        enum_class = self.value.__class__\n-        module = enum_class.__module__\n-        v_string, v_imports = serializer_factory(self.value.value).serialize()\n-        imports = {'import %s' % module, *v_imports}\n-        return \"%s.%s(%s)\" % (module, enum_class.__name__, v_string), imports\n+        \"\"\"Serialize an ``enum.Enum`` member.\n+\n+        The original implementation serialized the enum using its *value*\n+        (e.g. ``MyEnum('value')``). This caused problems when the enum value\n+        was a lazy translation string that could change at runtime – the\n+        migration would then reference a value that no longer existed in the\n+        enum, raising ``ValueError`` during migration loading.\n+\n+        To make migrations robust, we serialize the enum using its *name*\n+        via the ``EnumClass['NAME']`` syntax. This representation is stable\n+        regardless of the underlying value (including translated strings).\n+        \"\"\"\n+        enum_class = self.value.__class__\n+        module = enum_class.__module__\n+        # Use the enum member's name for a stable reference.\n+        name_repr = repr(self.value.name)\n+        imports = {f\"import {module}\"}\n+        return f\"{module}.{enum_class.__name__}[{name_repr}]\", imports\n*** End Patch"
+          },
+          "id": "fc_57c85a23-6696-4754-9f74-482594f78778",
+          "name": "apply_patch"
+        }
+      ],
+      "turn": 5,
+      "usage": {
+        "completion_time": 1.223292051,
+        "completion_tokens": 578,
+        "completion_tokens_details": {
+          "reasoning_tokens": 204
+        },
+        "prompt_time": 0.215747472,
+        "prompt_tokens": 4666,
+        "queue_time": 0.402750263,
+        "total_time": 1.439039523,
+        "total_tokens": 5244
+      }
+    },
+    {
+      "kind": "tool_result",
+      "name": "apply_patch",
+      "result": {
+        "content": "patch has no file headers",
+        "metadata": {
+          "error": "ToolError"
+        },
+        "ok": false
+      },
+      "timestamp": 1789485281.8022738,
+      "tool_call_id": "fc_57c85a23-6696-4754-9f74-482594f78778",
+      "turn": 5
+    },
+    {
+      "content": "",
+      "finish_reason": "tool_calls",
+      "kind": "model_response",
+      "timestamp": 1789485327.7279444,
+      "tool_calls": [
+        {
+          "arguments": {
+            "patch": "*** Begin Patch\n*** Update File: django/db/migrations/serializer.py\n@@\n class EnumSerializer(BaseSerializer):\n     def serialize(self):\n-        enum_class = self.value.__class__\n-        module = enum_class.__module__\n-        v_string, v_imports = serializer_factory(self.value.value).serialize()\n-        imports = {'import %s' % module, *v_imports}\n-        return \"%s.%s(%s)\" % (module, enum_class.__name__, v_string), imports\n+        \"\"\"Serialize an ``enum.Enum`` member using its name.\n+\n+        Previously the serializer emitted ``EnumClass('value')`` which\n+        embeds the enum *value* directly. When the value is a lazy translation\n+        (e.g. ``gettext_lazy``), the value can change at runtime, causing\n+        migrations to reference a non‑existent enum value and raise a\n+        ``ValueError`` during loading. By serializing via the enum *name*\n+        (``EnumClass['NAME']``), the migration remains stable regardless of\n+        the underlying value.\n+        \"\"\"\n+        enum_class = self.value.__class__\n+        module = enum_class.__module__\n+        # Use the enum member's name for a stable reference.\n+        name_repr = repr(self.value.name)\n+        imports = {f\"import {module}\"}\n+        return f\"{module}.{enum_class.__name__}[{name_repr}]\", imports\n*** End Patch"
+          },
+          "id": "fc_536cb3da-d576-4cb9-b83d-3a8c485cb361",
+          "name": "apply_patch"
+        }
+      ],
+      "turn": 6,
+      "usage": {
+        "completion_time": 0.803816099,
+        "completion_tokens": 377,
+        "completion_tokens_details": {
+          "reasoning_tokens": 18
+        },
+        "prompt_time": 0.323081407,
+        "prompt_tokens": 5071,
+        "queue_time": 3.247725489,
+        "total_time": 1.126897506,
+        "total_tokens": 5448
+      }
+    },
+    {
+      "kind": "tool_result",
+      "name": "apply_patch",
+      "result": {
+        "content": "patch has no file headers",
+        "metadata": {
+          "error": "ToolError"
+        },
+        "ok": false
+      },
+      "timestamp": 1789485327.7280128,
+      "tool_call_id": "fc_536cb3da-d576-4cb9-b83d-3a8c485cb361",
+      "turn": 6
+    },
+    {
+      "content": "",
+      "finish_reason": "tool_calls",
+      "kind": "model_response",
+      "timestamp": 1789485370.6836538,
+      "tool_calls": [
+        {
+          "arguments": {
+            "patch": "*** Begin Patch\n*** Update File: django/db/migrations/serializer.py\n@@\n class EnumSerializer(BaseSerializer):\n     def serialize(self):\n-        enum_class = self.value.__class__\n-        module = enum_class.__module__\n-        v_string, v_imports = serializer_factory(self.value.value).serialize()\n-        imports = {'import %s' % module, *v_imports}\n-        return \"%s.%s(%s)\" % (module, enum_class.__name__, v_string), imports\n+        \"\"\"Serialize an ``enum.Enum`` member using its name.\n+\n+        Previously the serializer emitted ``EnumClass('value')`` which\n+        embeds the enum *value* directly. When the value is a lazy translation\n+        (e.g. ``gettext_lazy``), the value can change at runtime, causing\n+        migrations to reference a non‑existent enum value and raise a\n+        ``ValueError`` during loading. By serializing via the enum *name*\n+        (``EnumClass['NAME']``), the migration remains stable regardless of\n+        the underlying value.\n+        \"\"\"\n+        enum_class = self.value.__class__\n+        module = enum_class.__module__\n+        # Use the enum member's name for a stable reference.\n+        name_repr = repr(self.value.name)\n+        imports = {f\"import {module}\"}\n+        return f\"{module}.{enum_class.__name__}[{name_repr}]\", imports\n*** End Patch"
+          },
+          "id": "fc_04251098-4048-46b0-ba1f-54002081b490",
+          "name": "apply_patch"
+        }
+      ],
+      "turn": 7,
+      "usage": {
+        "completion_time": 0.825120839,
+        "completion_tokens": 388,
+        "completion_tokens_details": {
+          "reasoning_tokens": 29
+        },
+        "prompt_time": 0.26422644,
+        "prompt_tokens": 5461,
+        "queue_time": 0.317554775,
+        "total_time": 1.089347279,
+        "total_tokens": 5849
+      }
+    },
+    {
+      "kind": "tool_result",
+      "name": "apply_patch",
+      "result": {
+        "content": "patch has no file headers",
+        "metadata": {
+          "error": "ToolError"
+        },
+        "ok": false
+      },
+      "timestamp": 1789485370.6837378,
+      "tool_call_id": "fc_04251098-4048-46b0-ba1f-54002081b490",
+      "turn": 7
+    }
+  ],
+  "generation_input": {
+    "base_commit": "e02f67ef2d03d48128e7a118bf75f0418e24e8ac",
+    "instance_id": "django__django-11815",
+    "problem_statement": "Migrations uses value of enum object instead of its name.\nDescription\n\t \n\t\t(last modified by oasl)\n\t \nWhen using Enum object as a default value for a CharField, the generated migration file uses the value of the Enum object instead of the its name. This causes a problem when using Django translation on the value of the Enum object. \nThe problem is that, when the Enum object value get translated to the users language, the old migration files raise an error stating that the Enum does not have the corresponding value. (because the Enum value is translated to another language)\nExample:\nLet say we have this code in models.py:\nfrom enum import Enum\nfrom django.utils.translation import gettext_lazy as _\nfrom django.db import models\nclass Status(Enum):\n\tGOOD = _('Good') # 'Good' will be translated\n\tBAD = _('Bad') # 'Bad' will be translated\n\tdef __str__(self):\n\t\treturn self.name\nclass Item(models.Model):\n\tstatus = models.CharField(default=Status.GOOD, max_length=128)\nIn the generated migration file, the code will be:\n...\n('status', models.CharField(default=Status('Good'), max_length=128))\n...\nAfter the translation, 'Good' will be translated to another word and it will not be part of the Status Enum class any more, so the migration file will raise the error on the previous line:\nValueError: 'Good' is not a valid Status\nShouldn't the code generated by the migration uses the name of the Status Enum 'GOOD', not the value of it, since it is changeable?\nIt should be:\n('status', models.CharField(default=Status['GOOD'], max_length=128))\nThis will be correct regardless of the translated word\n",
+    "repo": "django/django",
+    "repo_url": "https://github.com/django/django.git",
+    "runtime": {
+      "container_image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-11815:latest",
+      "test_profile": "django-runtests"
+    },
+    "split": "test",
+    "test_commands": [
+      "python tests/runtests.py --verbosity 1"
+    ]
+  },
+  "instance_id": "django__django-11815"
+}

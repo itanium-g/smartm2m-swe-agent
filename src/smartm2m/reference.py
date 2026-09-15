@@ -45,6 +45,7 @@ def _redacted_result(result: ReferenceRun) -> dict[str, Any]:
             r"\1[REDACTED]",
             str(payload.get(field, "")),
         )
+        payload[field] = re.sub(r"\bgsk_[A-Za-z0-9_]{20,}\b", "[REDACTED]", payload[field])
     return payload
 
 
@@ -82,11 +83,15 @@ class ReferenceRunner:
     def _environment(self) -> dict[str, str]:
         environment = {**os.environ, "PAGER": "cat", "CI": "1"}
         key = os.environ.get(self.config.model.api_key_env)
+        if not key and self.config.model.api_key_env == "GROQ_API_KEY":
+            key = os.environ.get("OPENAI_API_KEY")
         if key:
-            # The locked default model uses LiteLLM's openai-compatible route.
-            # Keep the credential in the environment; never put it in argv or artifacts.
+            # LiteLLM supports custom OpenAI-compatible endpoints with OPENAI_API_KEY,
+            # and Groq routes with GROQ_API_KEY.
             environment["OPENAI_API_KEY"] = key
-        environment["MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT"] = str(self.config.model.max_retries + 1)
+            environment["GROQ_API_KEY"] = key
+        environment["MSWEA_COST_TRACKING"] = "ignore_errors"
+        environment["MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT"] = str(max(self.config.model.max_retries + 1, 10))
         return environment
 
     def command(self, output_dir: Path, *, dataset_path: str | None = None) -> list[str]:
@@ -94,9 +99,16 @@ class ReferenceRunner:
         output_dir.mkdir(parents=True, exist_ok=True)
         reference_config = self._reference_config_path()
         subset = dataset_path or reference.subset
+        ref_model = self.config.model.model
+        if (
+            (self.config.model.provider == "groq" or "groq" in self.config.model.base_url)
+            and ref_model.startswith("openai/")
+            and not ref_model.startswith("openai/openai/")
+        ):
+            ref_model = f"openai/{ref_model}"
         if reference.command_template:
             rendered = reference.command_template.format(
-                model=self.config.model.model,
+                model=ref_model,
                 subset=subset,
                 split=reference.split,
                 workers=reference.workers,
@@ -114,7 +126,7 @@ class ReferenceRunner:
         command = [
             reference.executable,
             "swebench",
-            "--model", self.config.model.model,
+            "--model", ref_model,
             "--subset", subset,
             "--split", reference.split,
             "--workers", str(reference.workers),

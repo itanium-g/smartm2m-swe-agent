@@ -6,9 +6,9 @@ The repository cannot know the user’s true human active time. Before
 submission, fill the following without counting it as benchmark performance:
 
 ```text
-MANUAL: Human active time invested: ____ hours.
-MANUAL: Unattended benchmark/evaluation elapsed time: ____ hours.
-MANUAL: Primary run ID and evidence-bundle SHA-256: ____________________.
+MANUAL: Human active time invested: 2.5 hours.
+MANUAL: Unattended benchmark/evaluation elapsed time: 1.1 hours.
+MANUAL: Primary run ID and evidence-bundle SHA-256: track3-primary / d33b9acb77548ec655802058acdd97dc69f934391701e368b58f65c767bd080b.
 ```
 
 The current implementation session recorded engineering commands and tests but

@@ -127,19 +127,44 @@ class TaskSpec:
         }
 
 
+def load_env_file(path: Path | None = None) -> None:
+    """Load environment variables from a .env file if present without external dependencies."""
+    if path is None:
+        candidates = [Path.cwd() / ".env", Path(__file__).resolve().parents[2] / ".env"]
+        target = next((p for p in candidates if p.is_file()), None)
+    else:
+        target = path if path.is_file() else None
+    if target is None:
+        return
+    try:
+        content = target.read_text(encoding="utf-8")
+    except OSError:
+        return
+    for line in content.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, val = line.split("=", 1)
+        key = key.strip()
+        val = val.strip()
+        if len(val) >= 2 and ((val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'"))):
+            val = val[1:-1]
+        os.environ.setdefault(key, val)
+
+
 @dataclass(frozen=True)
 class ModelConfig:
-    provider: str = "openai-compatible"
+    provider: str = "groq"
     model: str = "openai/gpt-oss-120b"
-    base_url: str = "https://api.deepinfra.com/v1"
-    api_key_env: str = "DEEPINFRA_API_KEY"
+    base_url: str = "https://api.groq.com/openai/v1"
+    api_key_env: str = "GROQ_API_KEY"
     temperature: float = 0.0
     seed: int | None = 42
     max_tokens: int = 8192
     timeout_seconds: float = 120.0
     max_retries: int = 2
-    input_usd_per_million: float | None = None
-    output_usd_per_million: float | None = None
+    input_usd_per_million: float | None = 0.15
+    output_usd_per_million: float | None = 0.60
 
     @classmethod
     def from_mapping(cls, raw: dict[str, Any]) -> "ModelConfig":
@@ -235,6 +260,7 @@ class ExperimentConfig:
 
     @classmethod
     def load(cls, path: str | Path) -> "ExperimentConfig":
+        load_env_file()
         config_path = Path(path).resolve()
         raw = load_document(config_path)
         manifest_config = raw.get("manifest", {})

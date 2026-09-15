@@ -1,0 +1,21 @@
+{
+  "columns": [
+    "repo",
+    "instance_id",
+    "base_commit",
+    "patch",
+    "test_patch",
+    "problem_statement",
+    "hints_text",
+    "created_at",
+    "version",
+    "FAIL_TO_PASS",
+    "PASS_TO_PASS",
+    "environment_setup_commit"
+  ],
+  "count": 50,
+  "evaluator_only": true,
+  "path": "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/dataset-evaluation",
+  "sha256": "6bad9c1ac557f08887727237fb598aaeb9d3d0c6eb321ba84457d40ec4159b6e",
+  "split": "test"
+}

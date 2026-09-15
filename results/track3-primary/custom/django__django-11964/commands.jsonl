@@ -1,0 +1,1 @@
+{"command": "python tests/runtests.py --verbosity 1", "returncode": null, "output": "\n[timeout after 120s]", "duration_seconds": 120.00667069300107, "timed_out": true, "signal": null, "output_chars": 21, "container_image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-11964:latest", "stdout": "", "stderr": ""}

@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 129,
+  "estimated_cost_usd": 0.0010420499999999999,
+  "instance_id": "sphinx-doc__sphinx-8551",
+  "last_successful_test_command": null,
+  "model_attempts": 4,
+  "model_requests": 3,
+  "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "prompt_tokens": 6431,
+  "reason": "provider HTTP 400: {\"error\":{\"message\":\"Tool call validation failed: tool call validation failed: attempted to call tool 'commentary' which was not in request.tools\",\"type\":\"invalid_request_error\",\"code\":\"tool_use_failed\",\"failed_generation\":\"{\\\"name\\\": \\\"commentary\\\", \\\"arguments\\\": {\\\"path\\\": \\\"sphinx\\\", \\\"query\\\": \\\"type:\\\"}}\"}}\n",
+  "recovery_used": false,
+  "status": "provider_error",
+  "total_tokens": 6560,
+  "turns": 3,
+  "validation_required": true
+}

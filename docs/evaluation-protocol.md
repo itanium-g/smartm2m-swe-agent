@@ -48,14 +48,14 @@ evaluator. This avoids relying on a floating Hugging Face `main` snapshot.
 | Setting | Locked value |
 |---|---|
 | Model | `openai/gpt-oss-120b` |
-| Endpoint | configurable, default `https://api.deepinfra.com/v1` |
-| Key env | `DEEPINFRA_API_KEY` |
+| Endpoint | configurable, default `https://api.groq.com/openai/v1` |
+| Key env | `GROQ_API_KEY` |
 | Temperature / requested seed | `0` / `42` |
 | Max completion | `8192` tokens per call |
 | Reference / custom cap | 60 steps / 60 turns |
 | Wall limit | 2,700 seconds per arm episode |
 | Primary attempts | one per task per arm |
-| Dollar budget | not claimed; pricing is unset |
+| Dollar budget | \$0.15 / \$0.60 per million input/output tokens |
 
 The same model and request settings are used by the custom OpenAI-compatible
 transport and stock mini-swe-agent/LiteLLM. Equal turn/token caps are the

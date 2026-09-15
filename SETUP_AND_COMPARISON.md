@@ -47,7 +47,7 @@ The evaluator is invoked only after both prediction files are sealed. Its
 ## Budget and endpoint
 
 Both arms use the same model, endpoint, temperature, requested seed,
-completion-token limit, and one-attempt/60-step or turn cap. Provider dollar
-pricing is not asserted because the selected endpoint’s effective price is
-not part of a stable public lock; known observed spend and token counts are
-written separately. The API key is supplied only through `DEEPINFRA_API_KEY`.
+completion-token limit, and one-attempt/60-step or turn cap. Provider pricing
+is configured for Groq ($0.15/$0.60 per million input/output tokens); known
+observed spend and token counts are written separately. The API key is supplied
+through `GROQ_API_KEY` (or `.env`).

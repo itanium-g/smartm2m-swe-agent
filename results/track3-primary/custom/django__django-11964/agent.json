@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 391,
+  "estimated_cost_usd": 0.002268,
+  "instance_id": "django__django-11964",
+  "last_successful_test_command": null,
+  "model_attempts": 11,
+  "model_requests": 8,
+  "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "prompt_tokens": 13556,
+  "reason": "provider HTTP 400: {\"error\":{\"message\":\"Tool call validation failed: tool call validation failed: attempted to call tool 'commentary' which was not in request.tools\",\"type\":\"invalid_request_error\",\"code\":\"tool_use_failed\",\"failed_generation\":\"{\\\"name\\\": \\\"commentary\\\", \\\"arguments\\\": {\\\"path\\\": \\\"django\\\", \\\"query\\\": \\\"TextChoices\\\"}}\"}}\n",
+  "recovery_used": false,
+  "status": "provider_error",
+  "total_tokens": 13947,
+  "turns": 8,
+  "validation_required": true
+}

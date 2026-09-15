@@ -1,0 +1,13 @@
+{
+  "columns": [
+    "instance_id",
+    "repo",
+    "base_commit",
+    "problem_statement"
+  ],
+  "count": 50,
+  "evaluator_only": false,
+  "path": "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-primary/dataset-generation",
+  "sha256": "7b219dfbeaf890ec16028ae0da84ec5ea8ae6f2013fa07f61b19024edf76ff6a",
+  "split": "test"
+}

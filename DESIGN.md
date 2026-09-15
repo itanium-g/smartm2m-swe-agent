@@ -65,11 +65,10 @@ knowledge; suspicious tasks remain in the headline denominator.
 
 The lock records the dataset revision, selection fingerprint, model, endpoint,
 seed, temperature, completion-token limit, turn/step limit, wall policy,
-mini-swe-agent commit, evaluator commit, and one-attempt protocol. DeepInfra
-pricing is not hard-coded because an unset or changing provider price would
-make a nominal dollar cap false. Both arms therefore use the matched 60-step/
-turn and 8,192-token-call caps; token usage and known cost are reported
-separately.
+mini-swe-agent commit, evaluator commit, and one-attempt protocol. Groq
+pricing is tracked at \$0.15 / \$0.60 per million input/output tokens.
+Both arms use the matched 60-step/turn and 8,192-token-call caps; token usage
+and known cost are reported separately.
 
 ## Limitations and next steps
 
