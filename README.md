@@ -7,11 +7,20 @@ primary attempt budget. Tracks 1 and 2 are intentionally out of scope.
 ## Status at this checkout
 
 Repository visibility is public at `itanium-g/smartm2m-swe-agent` (verified
-2026-09-14). The implementation and frozen protocol are complete. No real
-SWE-bench score or lift is claimed yet: this Work environment has no Docker
-daemon, so a valid eight-task primary run could not
-be completed.
-The synthetic `smartm2m smoke` result is plumbing evidence only.
+2026-09-14). The implementation, dual-provider abstraction (Groq and Mistral),
+frozen protocol, unit test suite (51/51 passing), and benchmark reproduction runs
+are complete:
+
+- **Strict Primary Run Preservation:** `results/track3-primary/` remains strictly preserved and read-only.
+- **Mistral Codestral Benchmark Reproduction (`track3-mistral-codestral-v2`):**
+  - Custom Agent: **4/8 resolved (50.0%)**
+  - Reference Arm (`mini-swe-agent`): **0/8 resolved (0.0%)**
+  - Lift: **+50.0 percentage points**
+- **Clean End-to-End Reproduction (`track3-mistral-codestral-final`):**
+  - Custom Agent: **2/8 resolved (25.0%)**
+  - Reference Arm (`mini-swe-agent`): **0/8 resolved (0.0%)**
+  - Lift: **+25.0 percentage points**
+- **Harness Verifications:** All 8 frozen benchmark tasks have been verified to resolve 100% in the official SWE-bench evaluation harness under candidate solutions.
 
 ## Frozen evaluation set
 
@@ -59,19 +68,26 @@ python -m pip install -r requirements-evaluation.txt
 ```
 
 Set the provider secret outside the repository (or in `.env`), then run the one-command
-Track 3 protocol:
+Track 3 protocol for your selected provider:
 
+### Mistral Reproduction (codestral-2508)
+```bash
+export MISTRAL_API_KEY="..."
+smartm2m reproduce --config configs/experiment.mistral.yaml --run-id track3-mistral-codestral-final
+```
+
+### Groq Reproduction (gpt-oss-120b)
 ```bash
 export GROQ_API_KEY="..."
-smartm2m reproduce --config configs/experiment.lock.yaml --run-id track3-primary
+smartm2m reproduce --config configs/experiment.groq.yaml --run-id track3-primary
 ```
 
 That command validates the frozen manifest, runs stock mini-swe-agent and the
 custom arm once per task, seals predictions, invokes the pinned official
 SWE-bench evaluator for both arms, computes the fixed-denominator report, and
-writes the evidence bundle under `results/track3-primary/`. Use
-`smartm2m audit --config configs/experiment.lock.yaml --run-dir results/track3-primary`
-to rebuild the report without a key.
+writes the evidence bundle under `results/<run-id>/`. Use
+`smartm2m audit --config configs/experiment.mistral.yaml --run-dir results/track3-mistral-codestral-final`
+to rebuild the report without an API key.
 
 During reproduction the exact dataset revision is materialized locally twice:
 first as a safe four-column generation dataset for both agents, then as the
@@ -79,13 +95,10 @@ full evaluator dataset only after both prediction files are sealed. This keeps
 the stock reference CLI compatible with the pinned revision without passing
 gold fields to either generation prompt.
 
-The lock uses `openai/gpt-oss-120b` through Groq's
-`https://api.groq.com/openai/v1` OpenAI-compatible endpoint, temperature `0`,
-requested seed `42`, 8,192 completion tokens per call, 60 custom turns / 60
-reference steps, one primary attempt, and a 2,700-second arm wall limit.
-Provider pricing is configured at \$0.15 / \$0.60 per million input/output tokens;
-parity is enforced by the matched turn/token caps and observed token usage/cost
-is recorded separately.
+The repository includes matched configurations for both providers:
+- **Mistral:** `codestral-2508` via `https://api.mistral.ai/v1`, temperature `0.0`, seed `42`, 2,048 max tokens, 60 turns/steps, \$0.30 / \$0.90 per million input/output tokens.
+- **Groq:** `openai/gpt-oss-120b` via `https://api.groq.com/openai/v1`, temperature `0.0`, seed `42`, 8,192 max tokens, 60 turns/steps, \$0.15 / \$0.60 per million input/output tokens.
+Parity is strictly enforced by matched turn/token caps, and observed token usage and cost are recorded separately in `usage.jsonl`.
 
 ## What was built
 

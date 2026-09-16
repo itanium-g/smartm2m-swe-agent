@@ -1,0 +1,25 @@
+{
+  "status": "completed",
+  "command": [
+    "/usr/bin/python3",
+    "-m",
+    "swebench.harness.run_evaluation",
+    "--dataset_name",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/dataset-evaluation",
+    "--split",
+    "test",
+    "--predictions_path",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/reference/predictions.jsonl",
+    "--max_workers",
+    "1",
+    "--run_id",
+    "track3-mistral-codestral-final-reference"
+  ],
+  "returncode": 0,
+  "duration_seconds": 3.803495464992011,
+  "stdout": "No instances to run.\nTotal instances: 50\nInstances submitted: 8\nInstances completed: 0\nInstances incomplete: 42\nInstances resolved: 0\nInstances unresolved: 0\nInstances with likely infrastructure failures: 0\nInstances with ambiguous failures: 0\nInstances with empty patches: 8\nInstances with errors: 0\nUnstopped containers: 0\nUnremoved images: 8\nReport written to logs/evaluation/track3-mistral-codestral-final-reference/results.json\n",
+  "stderr": "\nGenerating train split: 0 examples [00:00, ? examples/s]\nGenerating train split: 50 examples [00:00, 6619.59 examples/s]\n",
+  "run_id": "track3-mistral-codestral-final-reference",
+  "reason": "",
+  "working_directory": "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/evaluation/reference"
+}

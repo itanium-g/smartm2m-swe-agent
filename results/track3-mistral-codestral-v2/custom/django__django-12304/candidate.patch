@@ -1,0 +1,28 @@
+diff --git a/django/db/models/enums.py b/django/db/models/enums.py
+index f48143ddaf..4f525d2543 100644
+--- a/django/db/models/enums.py
++++ b/django/db/models/enums.py
+@@ -60,6 +60,15 @@ class ChoicesMeta(enum.EnumMeta):
+ 
+ class Choices(enum.Enum, metaclass=ChoicesMeta):
+     """Class for creating enumerated choices."""
++    do_not_call_in_templates = True
++
++class IntegerChoices(int, Choices):
++    """Class for creating enumerated integer choices."""
++    pass
++
++class TextChoices(str, Choices):
++    """Class for creating enumerated string choices."""
++    pass
+ 
+     def __str__(self):
+         """
+@@ -71,6 +80,7 @@ class Choices(enum.Enum, metaclass=ChoicesMeta):
+ 
+ class IntegerChoices(int, Choices):
+     """Class for creating enumerated integer choices."""
++    do_not_call_in_templates = True
+     pass
+ 
+ 

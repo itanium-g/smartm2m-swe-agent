@@ -37,7 +37,7 @@ def test_groq_api_key_redaction():
 
 def test_reference_runner_environment_groq_keys(monkeypatch):
     root = Path(__file__).parents[1]
-    config = ExperimentConfig.load(root / "configs/experiment.lock.yaml")
+    config = ExperimentConfig.load(root / "configs/experiment.groq.yaml")
     monkeypatch.setenv("GROQ_API_KEY", "gsk_fakekey12345678901234567890")
     runner = ReferenceRunner(config)
     env = runner._environment()

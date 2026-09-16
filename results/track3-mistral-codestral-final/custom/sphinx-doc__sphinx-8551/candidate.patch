@@ -1,0 +1,13 @@
+diff --git a/sphinx/domains/python.py b/sphinx/domains/python.py
+index 79d7e4f46..42ed3fff6 100644
+--- a/sphinx/domains/python.py
++++ b/sphinx/domains/python.py
+@@ -1263,6 +1263,8 @@ class PythonDomain(Domain):
+                     if modname and modname + '.' + name in self.objects and \
+                        self.objects[modname + '.' + name].objtype in objtypes:
+                         newname = modname + '.' + name
++                    elif modname and name in self.objects and self.objects[name].objtype in objtypes:
++                        newname = modname + '.' + name
+                     elif name in self.objects and self.objects[name].objtype in objtypes:
+                         newname = name
+                     else:

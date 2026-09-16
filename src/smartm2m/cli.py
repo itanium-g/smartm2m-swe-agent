@@ -24,10 +24,12 @@ def _parser() -> argparse.ArgumentParser:
 
     pre = commands.add_parser("preflight", help="validate pins, manifest shape, and local prerequisites")
     pre.add_argument("--config", default="configs/experiment.lock.yaml")
+    pre.add_argument("--provider", choices=("mistral", "groq"), help="select provider explicitly (mistral or groq)")
     pre.add_argument("--allow-unresolved-manifest", action="store_true")
 
     run = commands.add_parser("reproduce", help="run reference + custom generation, evaluation, and report")
     run.add_argument("--config", default="configs/experiment.lock.yaml")
+    run.add_argument("--provider", choices=("mistral", "groq"), help="select provider explicitly (mistral or groq)")
     run.add_argument("--run-id")
     run.add_argument("--allow-unresolved-manifest", action="store_true")
     run.add_argument("--dry-run-reference", action="store_true")
@@ -54,7 +56,12 @@ def main(argv: list[str] | None = None) -> int:
             output = run_smoke(args.output)
             print(json.dumps({"status": "passed", "run_dir": str(output)}, indent=2))
             return 0
-        config = ExperimentConfig.load(args.config)
+        config_path = args.config
+        if getattr(args, "provider", None) == "groq" and config_path in {"configs/experiment.lock.yaml", "configs/experiment.mistral.yaml"}:
+            config_path = "configs/experiment.groq.yaml"
+        elif getattr(args, "provider", None) == "mistral" and config_path in {"configs/experiment.lock.yaml", "configs/experiment.groq.yaml"}:
+            config_path = "configs/experiment.mistral.yaml"
+        config = ExperimentConfig.load(config_path)
         if args.command == "preflight":
             report = preflight(config, allow_unresolved=args.allow_unresolved_manifest)
             print(json.dumps(report, indent=2))

@@ -211,3 +211,73 @@ def test_clean_replay_classifies_container_daemon_error_as_unavailable(monkeypat
 
     assert validation.status == "unavailable"
     assert validation.reason == "container runtime unavailable"
+
+
+def test_apply_patch_handles_begin_patch_format(tmp_path: Path):
+    repo = make_repo(tmp_path)
+    task = TaskSpec("synthetic__patch-format-1", "Fix addition.", repo_path=str(repo))
+    runner = ToolRunner(repo, task)
+    patch = """*** Begin Patch
+*** Update File: src/maths.py
+@@
+-    return a - b
++    return a + b
+*** End Patch
+"""
+    result = runner.apply_patch(patch)
+    assert result.ok
+    assert (repo / "src" / "maths.py").read_text(encoding="utf-8") == "def add(a, b):\n    return a + b\n"
+
+
+def test_execute_filters_unexpected_kwargs(tmp_path: Path):
+    from smartm2m.protocol import ToolCall
+    repo = make_repo(tmp_path)
+    task = TaskSpec("synthetic__kwargs-1", "Test kwargs.", repo_path=str(repo))
+    runner = ToolRunner(repo, task)
+
+    # get_diff takes no args, but model might pass {"ok": True, "notes": "check"}
+    call = ToolCall(id="call_1", name="get_diff", arguments={"ok": True, "notes": "check"})
+    result = runner.execute(call)
+    assert result.ok
+    assert result.content == ""
+
+
+def test_search_handles_special_characters(tmp_path: Path):
+    repo = make_repo(tmp_path)
+    (repo / "src" / "special.py").write_text(
+        "def hello(*args, **kwargs):\n"
+        "    item = mapping['KEY']\n"
+        "    setattr(cls, 'get_%s_display' % self.name, func)\n"
+        "    return item\n",
+        encoding="utf-8",
+    )
+    task = TaskSpec("synthetic__search-1", "Test search.", repo_path=str(repo))
+    runner = ToolRunner(repo, task)
+
+    res1 = runner.search("(*args, **kwargs)")
+    assert res1.ok
+    assert "special.py:1:" in res1.content
+
+    res2 = runner.search("mapping['KEY']")
+    assert res2.ok
+    assert "special.py:2:" in res2.content
+
+    res3 = runner.search("get_FOO_display")
+    assert res3.ok
+    assert "special.py:3:" in res3.content
+
+
+def test_unfiltered_test_suite_detection():
+    from smartm2m.tools import _is_unfiltered_test_suite_run
+
+    unfiltered, msg = _is_unfiltered_test_suite_run("python tests/runtests.py --verbosity 1")
+    assert unfiltered
+    assert "without specifying target test app(s)" in msg
+
+    unfiltered2, _ = _is_unfiltered_test_suite_run("python tests/runtests.py indexes")
+    assert not unfiltered2
+
+    unfiltered3, _ = _is_unfiltered_test_suite_run("python tests/runtests.py --settings=test_sqlite indexes.tests")
+    assert not unfiltered3
+
+

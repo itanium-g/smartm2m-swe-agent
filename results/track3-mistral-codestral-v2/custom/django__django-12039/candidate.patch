@@ -1,0 +1,13 @@
+diff --git a/django/db/backends/ddl_references.py b/django/db/backends/ddl_references.py
+index 44e49806f8..aa61314486 100644
+--- a/django/db/backends/ddl_references.py
++++ b/django/db/backends/ddl_references.py
+@@ -84,7 +84,7 @@ class Columns(TableColumns):
+     def __str__(self):
+         def col_str(column, idx):
+             try:
+-                return self.quote_name(column) + self.col_suffixes[idx]
++                return self.quote_name(column) + ' ' + self.col_suffixes[idx] if self.col_suffixes[idx] else self.quote_name(column)
+             except IndexError:
+                 return self.quote_name(column)
+ 

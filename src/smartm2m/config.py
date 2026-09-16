@@ -163,6 +163,7 @@ class ModelConfig:
     max_tokens: int = 8192
     timeout_seconds: float = 120.0
     max_retries: int = 2
+    parallel_tool_calls: bool = False
     input_usd_per_million: float | None = 0.15
     output_usd_per_million: float | None = 0.60
 
@@ -178,6 +179,7 @@ class ModelConfig:
             max_tokens=int(raw.get("max_tokens", cls.max_tokens)),
             timeout_seconds=float(raw.get("timeout_seconds", cls.timeout_seconds)),
             max_retries=int(raw.get("max_retries", cls.max_retries)),
+            parallel_tool_calls=bool(raw.get("parallel_tool_calls", cls.parallel_tool_calls)),
             input_usd_per_million=(
                 None if raw.get("input_usd_per_million") is None else float(raw["input_usd_per_million"])
             ),

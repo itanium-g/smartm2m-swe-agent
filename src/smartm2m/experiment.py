@@ -54,6 +54,10 @@ def _redact(value: str) -> str:
     ]
     for pattern, replacement in replacements:
         value = re.sub(pattern, replacement, value)
+    for env_var in ("MISTRAL_API_KEY", "GROQ_API_KEY", "OPENAI_API_KEY"):
+        val = os.environ.get(env_var)
+        if val and len(val) >= 8:
+            value = value.replace(val, "[REDACTED]")
     return value
 
 
@@ -142,10 +146,17 @@ def preflight(config: ExperimentConfig, *, allow_unresolved: bool = False) -> di
         warnings.append(f"official SWE-bench images are x86_64; host architecture is {platform.machine()}")
     if config.model.input_usd_per_million is None or config.model.output_usd_per_million is None:
         warnings.append("provider pricing is unset; parity uses the locked turn/token caps and observed spend is reported as unknown")
-    if not os.environ.get(config.model.api_key_env):
+    key = os.environ.get(config.model.api_key_env)
+    if not key:
         warnings.append(
             f"model key is not set ({config.model.api_key_env}); generation will record provider_error"
         )
+    elif config.model.provider not in {"scripted", "test"}:
+        try:
+            from .model import preflight_provider
+            checks["provider_preflight"] = preflight_provider(config.model)
+        except Exception as exc:
+            errors.append(f"provider preflight failed: {_redact(str(exc))}")
     checks["warnings"] = warnings
     checks["errors"] = errors
     checks["ok"] = not errors
@@ -447,7 +458,7 @@ def reproduce(
     summary = audit_run(run_dir, config)
     _json_write(run_dir / "run.json", {
         "run_id": run_dir.name,
-        "status": "complete_with_explicit_failures",
+        "status": "completed" if summary.get("custom_resolved") == config.expected_count else "complete_with_explicit_failures",
         "summary": summary,
         "completed_at": datetime.now(timezone.utc).isoformat(),
     })

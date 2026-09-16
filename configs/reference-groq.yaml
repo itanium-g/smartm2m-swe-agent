@@ -1,0 +1,17 @@
+# Loaded after mini-swe-agent's pinned built-in swebench.yaml.
+# Configuration overlay for Groq fallback models (openai/gpt-oss-120b).
+# The upstream agent, prompt, parser, and environment implementation remain untouched.
+agent:
+  step_limit: 60
+  cost_limit: 1000000
+environment:
+  timeout: 120
+model:
+  model_kwargs:
+    api_base: https://api.groq.com/openai/v1
+    temperature: 0
+    seed: 42
+    max_tokens: 8192
+    timeout: 120
+    drop_params: true
+  cost_tracking: ignore_errors

@@ -1,0 +1,13 @@
+{
+  "base_commit": "84633905273fc916e3d17883810d9969c03f73c2",
+  "command": "python tests/runtests.py model_fields",
+  "command_sha256": "2b062a5fcef7dab0e0f758076b956ec3a5a464f1f74885a262aad5e74073dc31",
+  "duration_seconds": 2.302335849002702,
+  "output": "Creating test database for alias 'default'...\nCloning test database for alias 'default'...\nCloning test database for alias 'default'...\nTesting against Django installed in '/testbed/django' with up to 2 processes\nSystem check identified no issues (0 silenced).\n................................................................s.........................................................................................s...........................................................................................................................................................\n----------------------------------------------------------------------\nRan 310 tests in 0.521s\n\nOK (skipped=2)\nDestroying test database for alias 'default'...\nDestroying test database for alias 'default'...\nDestroying test database for alias 'default'...\n",
+  "patch_sha256": "40508af682c4887567977cf0149a03e3a5372068da6854f63e67ea0875b05be1",
+  "reason": "",
+  "returncode": 0,
+  "setup_commands": [],
+  "status": "passed",
+  "timed_out": false
+}

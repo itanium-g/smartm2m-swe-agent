@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 2319,
+  "estimated_cost_usd": 0.033102900000000005,
+  "instance_id": "django__django-12273",
+  "last_successful_test_command": "python tests/runtests.py model_inheritance_regress",
+  "model_attempts": 16,
+  "model_requests": 16,
+  "patch_sha256": "5a02f904433aa184bd66ff6ec19c69c16d727d3a8d9599d7889c3935994ffb30",
+  "prompt_tokens": 103386,
+  "reason": "patch sealed; clean replay validation is required",
+  "recovery_used": false,
+  "status": "submitted",
+  "total_tokens": 105705,
+  "turns": 16,
+  "validation_required": true
+}

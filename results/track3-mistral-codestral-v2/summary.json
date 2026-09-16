@@ -1,0 +1,164 @@
+{
+  "baseline": [
+    {
+      "cost_usd": null,
+      "evaluation_status": "not_resolved",
+      "generation_status": "empty_patch",
+      "instance_id": "sphinx-doc__sphinx-8551",
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reason": "tests failed",
+      "resolved": false
+    },
+    {
+      "cost_usd": null,
+      "evaluation_status": "not_resolved",
+      "generation_status": "submitted",
+      "instance_id": "django__django-11999",
+      "patch_sha256": "54a2e8bb7adee4a4044c0499b2420f44e8cf5900498db78295080959541531ff",
+      "reason": "tests failed",
+      "resolved": false
+    },
+    {
+      "cost_usd": null,
+      "evaluation_status": "not_resolved",
+      "generation_status": "empty_patch",
+      "instance_id": "django__django-11815",
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reason": "tests failed",
+      "resolved": false
+    },
+    {
+      "cost_usd": null,
+      "evaluation_status": "not_resolved",
+      "generation_status": "empty_patch",
+      "instance_id": "django__django-12304",
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reason": "tests failed",
+      "resolved": false
+    },
+    {
+      "cost_usd": null,
+      "evaluation_status": "not_resolved",
+      "generation_status": "empty_patch",
+      "instance_id": "django__django-12273",
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reason": "tests failed",
+      "resolved": false
+    },
+    {
+      "cost_usd": null,
+      "evaluation_status": "not_resolved",
+      "generation_status": "empty_patch",
+      "instance_id": "django__django-12262",
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reason": "tests failed",
+      "resolved": false
+    },
+    {
+      "cost_usd": null,
+      "evaluation_status": "not_resolved",
+      "generation_status": "empty_patch",
+      "instance_id": "django__django-12039",
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reason": "tests failed",
+      "resolved": false
+    },
+    {
+      "cost_usd": null,
+      "evaluation_status": "not_resolved",
+      "generation_status": "empty_patch",
+      "instance_id": "django__django-11964",
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reason": "tests failed",
+      "resolved": false
+    }
+  ],
+  "bundle_sha256_before_checksums": "02d9a310aaff5c2614d2f1f928a708898f35ecef44824a542757863413b7142d",
+  "custom": [
+    {
+      "cost_usd": 0.0126789,
+      "evaluation_status": "resolved",
+      "generation_status": "submitted",
+      "instance_id": "sphinx-doc__sphinx-8551",
+      "patch_sha256": "b45e9ccd50e1fbfb1fd06a58e4fb3444daa1a7fee20296faf226ddd56d23d42a",
+      "reason": "",
+      "resolved": true
+    },
+    {
+      "cost_usd": 0.04518119999999999,
+      "evaluation_status": "not_resolved",
+      "generation_status": "loop_exhausted",
+      "instance_id": "django__django-11999",
+      "patch_sha256": "25186fc5a2768c44d8efc6e9728648ab18933e723831b639324261540acbcf85",
+      "reason": "tests failed",
+      "resolved": false
+    },
+    {
+      "cost_usd": 0.010232699999999999,
+      "evaluation_status": "resolved",
+      "generation_status": "submitted",
+      "instance_id": "django__django-11815",
+      "patch_sha256": "adb2a57e81ef536b30035681f3d7b3f54ffe2e31670e99f6c139aed88d818ce5",
+      "reason": "",
+      "resolved": true
+    },
+    {
+      "cost_usd": 0.09616079999999999,
+      "evaluation_status": "not_resolved",
+      "generation_status": "loop_exhausted",
+      "instance_id": "django__django-12304",
+      "patch_sha256": "9a079c5009c87c276c11659d279723a0cc501e6229f302d482cdda6cc456df04",
+      "reason": "tests failed",
+      "resolved": false
+    },
+    {
+      "cost_usd": 0.05318129999999999,
+      "evaluation_status": "not_resolved",
+      "generation_status": "loop_exhausted",
+      "instance_id": "django__django-12273",
+      "patch_sha256": "6f8bf3f1943bf75e869d03affff209e0dee6a7be725b2fc6f959fe5922d2af3e",
+      "reason": "tests failed",
+      "resolved": false
+    },
+    {
+      "cost_usd": 0.0106506,
+      "evaluation_status": "not_resolved",
+      "generation_status": "submitted",
+      "instance_id": "django__django-12262",
+      "patch_sha256": "816e6f2e059b95d0f91994a67e2725adbbc00ac3f02007771786ec5db779da4b",
+      "reason": "tests failed",
+      "resolved": false
+    },
+    {
+      "cost_usd": 0.0079449,
+      "evaluation_status": "resolved",
+      "generation_status": "submitted",
+      "instance_id": "django__django-12039",
+      "patch_sha256": "d44a2c45a9b42e55d21d6bcb5bbaa894694d617b01ea358c38c41350b6140c91",
+      "reason": "",
+      "resolved": true
+    },
+    {
+      "cost_usd": 0.010757699999999999,
+      "evaluation_status": "resolved",
+      "generation_status": "submitted",
+      "instance_id": "django__django-11964",
+      "patch_sha256": "4c4f67a5b133800f12147cc337930fbb6816c8527783ff87da990d420e8d4d8a",
+      "reason": "",
+      "resolved": true
+    }
+  ],
+  "custom_percent_resolved": 50.0,
+  "custom_resolved": 4,
+  "expected_count": 8,
+  "lift_percentage_points": 50.0,
+  "pairs": {
+    "both_solved": 0,
+    "custom_only": 4,
+    "neither_verified": 4,
+    "reference_only": 0
+  },
+  "reference_percent_resolved": 0.0,
+  "reference_resolved": 0,
+  "run_id": "track3-mistral-codestral-v2"
+}

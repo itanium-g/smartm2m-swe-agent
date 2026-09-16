@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 2787,
+  "estimated_cost_usd": 0.05318129999999999,
+  "instance_id": "django__django-12273",
+  "last_successful_test_command": null,
+  "model_attempts": 22,
+  "model_requests": 22,
+  "patch_sha256": "6f8bf3f1943bf75e869d03affff209e0dee6a7be725b2fc6f959fe5922d2af3e",
+  "prompt_tokens": 168910,
+  "reason": "repeated action: edit_file with no progress",
+  "recovery_used": true,
+  "status": "loop_exhausted",
+  "total_tokens": 171697,
+  "turns": 22,
+  "validation_required": true
+}
