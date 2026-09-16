@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 655,
+  "estimated_cost_usd": 0.0126789,
+  "instance_id": "sphinx-doc__sphinx-8551",
+  "last_successful_test_command": "python -m pytest -q tests/test_domain_py.py",
+  "model_attempts": 7,
+  "model_requests": 7,
+  "patch_sha256": "b45e9ccd50e1fbfb1fd06a58e4fb3444daa1a7fee20296faf226ddd56d23d42a",
+  "prompt_tokens": 40298,
+  "reason": "patch sealed; clean replay validation is required",
+  "recovery_used": false,
+  "status": "submitted",
+  "total_tokens": 40953,
+  "turns": 7,
+  "validation_required": true
+}

@@ -40,12 +40,18 @@ def _task_filter(tasks: tuple[TaskSpec, ...]) -> str:
 def _redacted_result(result: ReferenceRun) -> dict[str, Any]:
     payload = result.as_dict()
     for field in ("stdout", "stderr", "reason"):
-        payload[field] = re.sub(
+        val = str(payload.get(field, ""))
+        val = re.sub(
             r"(?i)(authorization\s*:\s*bearer\s+|api[_-]?key\s*[=:]\s*|token\s*[=:]\s*)[^\s\"']+",
             r"\1[REDACTED]",
-            str(payload.get(field, "")),
+            val,
         )
-        payload[field] = re.sub(r"\bgsk_[A-Za-z0-9_]{20,}\b", "[REDACTED]", payload[field])
+        val = re.sub(r"\bgsk_[A-Za-z0-9_]{20,}\b", "[REDACTED]", val)
+        for env_k in ("MISTRAL_API_KEY", "GROQ_API_KEY", "OPENAI_API_KEY"):
+            k_val = os.environ.get(env_k)
+            if k_val and len(k_val) >= 8:
+                val = val.replace(k_val, "[REDACTED]")
+        payload[field] = val
     return payload
 
 
@@ -86,10 +92,14 @@ class ReferenceRunner:
         if not key and self.config.model.api_key_env == "GROQ_API_KEY":
             key = os.environ.get("OPENAI_API_KEY")
         if key:
-            # LiteLLM supports custom OpenAI-compatible endpoints with OPENAI_API_KEY,
-            # and Groq routes with GROQ_API_KEY.
-            environment["OPENAI_API_KEY"] = key
-            environment["GROQ_API_KEY"] = key
+            environment[self.config.model.api_key_env] = key
+        mistral_key = os.environ.get("MISTRAL_API_KEY")
+        if mistral_key:
+            environment["MISTRAL_API_KEY"] = mistral_key
+        groq_key = os.environ.get("GROQ_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        if groq_key:
+            environment["GROQ_API_KEY"] = groq_key
+            environment["OPENAI_API_KEY"] = groq_key
         environment["MSWEA_COST_TRACKING"] = "ignore_errors"
         environment["MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT"] = str(max(self.config.model.max_retries + 1, 10))
         return environment
@@ -100,7 +110,10 @@ class ReferenceRunner:
         reference_config = self._reference_config_path()
         subset = dataset_path or reference.subset
         ref_model = self.config.model.model
-        if (
+        if self.config.model.provider == "mistral" or "mistral" in self.config.model.base_url:
+            if not ref_model.startswith("mistral/"):
+                ref_model = f"mistral/{ref_model}"
+        elif (
             (self.config.model.provider == "groq" or "groq" in self.config.model.base_url)
             and ref_model.startswith("openai/")
             and not ref_model.startswith("openai/openai/")

@@ -1,0 +1,13 @@
+{
+  "base_commit": "927c903f3cd25c817c21738328b53991c035b415",
+  "command": "python tests/runtests.py model_inheritance_regress",
+  "command_sha256": "9c0f82a8e1157db587d7d795b761087c538abe32a4971dbef3b4b775ff49dff4",
+  "duration_seconds": 1.805162777993246,
+  "output": "Creating test database for alias 'default'...\n..........x.................\n----------------------------------------------------------------------\nRan 28 tests in 0.091s\n\nOK (expected failures=1)\nDestroying test database for alias 'default'...\nTesting against Django installed in '/testbed/django' with up to 2 processes\nSystem check identified no issues (0 silenced).\n",
+  "patch_sha256": "5a02f904433aa184bd66ff6ec19c69c16d727d3a8d9599d7889c3935994ffb30",
+  "reason": "",
+  "returncode": 0,
+  "setup_commands": [],
+  "status": "passed",
+  "timed_out": false
+}

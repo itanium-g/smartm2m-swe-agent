@@ -100,36 +100,89 @@ def validate_clean_replay(
             "unavailable", patch_hash, command_hash, base, command, None, False, 0.0,
             f"docker is not installed for {container_image}", "container runtime unavailable", setup_commands,
         )
-    with tempfile.TemporaryDirectory(prefix="smartm2m-validate-") as temp:
+    with tempfile.TemporaryDirectory(prefix="smartm2m-validate-", ignore_cleanup_errors=True) as temp:
         clean = Path(temp)
-        _fresh_base(workspace, clean)
-        applied = subprocess.run(
-            ["git", "apply", "--whitespace=nowarn", "-"],
-            cwd=clean,
-            input=patch,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        if applied.returncode != 0:
-            return ValidationResult(
-                "invalid", patch_hash, command_hash, base, command, applied.returncode, False, 0.0,
-                applied.stderr.strip(), "patch could not be replayed on clean base",
+        try:
+            _fresh_base(workspace, clean)
+            applied = subprocess.run(
+                ["git", "apply", "--whitespace=nowarn", "-"],
+                cwd=clean,
+                input=patch,
+                text=True,
+                capture_output=True,
+                check=False,
             )
-        started = time.monotonic()
-        setup_output: list[str] = []
-        for setup in setup_commands:
+            if applied.returncode != 0:
+                return ValidationResult(
+                    "invalid", patch_hash, command_hash, base, command, applied.returncode, False, 0.0,
+                    applied.stderr.strip(), "patch could not be replayed on clean base",
+                )
+            started = time.monotonic()
+            setup_output: list[str] = []
+            for setup in setup_commands:
+                try:
+                    if container_image:
+                        prepared_argv: list[str] | str = _docker_argv(clean, container_image, setup)
+                        prepared_shell = False
+                    else:
+                        prepared_argv = setup
+                        prepared_shell = True
+                    prepared = subprocess.run(
+                        prepared_argv,
+                        cwd=clean,
+                        shell=prepared_shell,
+                        text=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        timeout=timeout_seconds,
+                        env={**os.environ, "CI": "1", "PAGER": "cat"},
+                        check=False,
+                    )
+                    setup_output.append(f"$ {setup}\n{prepared.stdout or ''}")
+                    if prepared.returncode != 0:
+                        output = "\n".join(setup_output)
+                        unavailable = bool(container_image) and _container_runtime_failed(output)
+                        return ValidationResult(
+                            "unavailable" if unavailable else "failed",
+                            patch_hash,
+                            command_hash,
+                            base,
+                            command,
+                            prepared.returncode,
+                            False,
+                            time.monotonic() - started,
+                            output[-max_output_chars:],
+                            "container runtime unavailable" if unavailable else "setup command failed",
+                            setup_commands,
+                        )
+                except subprocess.TimeoutExpired as exc:
+                    output = "\n".join([*setup_output, (exc.stdout or "") if isinstance(exc.stdout, str) else "", f"\n[setup timeout after {timeout_seconds}s]"])
+                    unavailable = bool(container_image) and _container_runtime_failed(output)
+                    return ValidationResult(
+                        "unavailable" if unavailable else "failed",
+                        patch_hash,
+                        command_hash,
+                        base,
+                        command,
+                        None,
+                        True,
+                        time.monotonic() - started,
+                        output[-max_output_chars:],
+                        "container runtime unavailable" if unavailable else "setup command timed out",
+                        setup_commands,
+                    )
+            timed_out = False
             try:
                 if container_image:
-                    prepared_argv: list[str] | str = _docker_argv(clean, container_image, setup)
-                    prepared_shell = False
+                    test_argv: list[str] | str = _docker_argv(clean, container_image, command)
+                    test_shell = False
                 else:
-                    prepared_argv = setup
-                    prepared_shell = True
-                prepared = subprocess.run(
-                    prepared_argv,
+                    test_argv = command
+                    test_shell = True
+                tested = subprocess.run(
+                    test_argv,
                     cwd=clean,
-                    shell=prepared_shell,
+                    shell=test_shell,
                     text=True,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
@@ -137,88 +190,41 @@ def validate_clean_replay(
                     env={**os.environ, "CI": "1", "PAGER": "cat"},
                     check=False,
                 )
-                setup_output.append(f"$ {setup}\n{prepared.stdout or ''}")
+                returncode: int | None = tested.returncode
+                output = "\n".join([*setup_output, tested.stdout or ""])
             except subprocess.TimeoutExpired as exc:
-                setup_output.append(
-                    f"$ {setup}\n{(exc.stdout or '') if isinstance(exc.stdout, str) else ''}"
-                    f"\n[timeout after {timeout_seconds}s]"
-                )
-                return ValidationResult(
-                    "failed",
-                    patch_hash,
-                    command_hash,
-                    base,
-                    command,
-                    None,
-                    True,
-                    time.monotonic() - started,
-                    "\n".join(setup_output)[-max_output_chars:],
-                    "setup command timed out",
-                    setup_commands,
-                )
-            if prepared.returncode != 0:
-                setup_text = "\n".join(setup_output)
-                unavailable = bool(container_image) and _container_runtime_failed(setup_text)
-                return ValidationResult(
-                    "unavailable" if unavailable else "failed",
-                    patch_hash,
-                    command_hash,
-                    base,
-                    command,
-                    prepared.returncode,
-                    False,
-                    time.monotonic() - started,
-                    "\n".join(setup_output)[-max_output_chars:],
-                    "container runtime unavailable" if unavailable else "setup command failed",
-                    setup_commands,
-                )
-        timed_out = False
-        try:
-            if container_image:
-                test_argv: list[str] | str = _docker_argv(clean, container_image, command)
-                test_shell = False
-            else:
-                test_argv = command
-                test_shell = True
-            tested = subprocess.run(
-                test_argv,
-                cwd=clean,
-                shell=test_shell,
-                text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                timeout=timeout_seconds,
-                env={**os.environ, "CI": "1", "PAGER": "cat"},
-                check=False,
+                timed_out = True
+                returncode = None
+                output = "\n".join([
+                    *setup_output,
+                    (exc.stdout or "") if isinstance(exc.stdout, str) else "",
+                ])
+                output += f"\n[timeout after {timeout_seconds}s]"
+            duration = time.monotonic() - started
+            unavailable = bool(container_image) and _container_runtime_failed(output)
+            failed = returncode != 0 or timed_out
+            return ValidationResult(
+                "unavailable" if unavailable else ("passed" if not failed else "failed"),
+                patch_hash,
+                command_hash,
+                base,
+                command,
+                returncode,
+                timed_out,
+                duration,
+                output[-max_output_chars:],
+                "" if not failed and not unavailable else (
+                    "container runtime unavailable" if unavailable else "visible test command failed"
+                ),
+                setup_commands,
             )
-            returncode: int | None = tested.returncode
-            output = "\n".join([*setup_output, tested.stdout or ""])
-        except subprocess.TimeoutExpired as exc:
-            timed_out = True
-            returncode = None
-            output = "\n".join([
-                *setup_output,
-                (exc.stdout or "") if isinstance(exc.stdout, str) else "",
-            ])
-            output += f"\n[timeout after {timeout_seconds}s]"
-        duration = time.monotonic() - started
-        unavailable = bool(container_image) and _container_runtime_failed(output)
-        failed = returncode != 0 or timed_out
-        return ValidationResult(
-            "unavailable" if unavailable else ("passed" if not failed else "failed"),
-            patch_hash,
-            command_hash,
-            base,
-            command,
-            returncode,
-            timed_out,
-            duration,
-            output[-max_output_chars:],
-            "" if not failed and not unavailable else (
-                "container runtime unavailable" if unavailable else "visible test command failed"
-            ),
-            setup_commands,
-        )
+        finally:
+            if container_image and shutil.which("docker") and clean.exists():
+                subprocess.run(
+                    ["docker", "run", "--rm", "-v", f"{temp}:/cleanup", "alpine", "sh", "-c", "rm -rf /cleanup/* /cleanup/.* 2>/dev/null || true"],
+                    capture_output=True,
+                    check=False,
+                )
 
 
 def write_validation(path: str | Path, result: ValidationResult) -> None:

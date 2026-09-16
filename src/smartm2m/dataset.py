@@ -73,7 +73,25 @@ def materialize_pinned_dataset(
         raise ConfigError(f"pinned dataset is missing frozen task IDs: {', '.join(missing_ids)}")
 
     if evaluator_only:
-        materialized = dataset
+        eval_cols = {"image", "eval_script", "log_parser", "eval_type"}
+        if not eval_cols.issubset(set(dataset.column_names)):
+            try:
+                verified_ds = load_dataset("SWE-bench/SWE-bench_Verified", split=config.reference.split)
+                verified_map = {row["instance_id"]: row for row in verified_ds}
+                augmented_rows = []
+                for row in dataset:
+                    row_dict = dict(row)
+                    v_row = verified_map.get(row["instance_id"], {})
+                    for col in eval_cols:
+                        if col not in row_dict:
+                            row_dict[col] = v_row.get(col, "")
+                    augmented_rows.append(row_dict)
+                from datasets import Dataset
+                materialized = Dataset.from_list(augmented_rows)
+            except Exception:
+                materialized = dataset
+        else:
+            materialized = dataset
     else:
         materialized = dataset.select_columns(list(SAFE_GENERATION_COLUMNS))
 

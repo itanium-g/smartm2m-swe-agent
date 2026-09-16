@@ -1,0 +1,25 @@
+{
+  "columns": [
+    "repo",
+    "instance_id",
+    "base_commit",
+    "patch",
+    "test_patch",
+    "problem_statement",
+    "hints_text",
+    "created_at",
+    "version",
+    "FAIL_TO_PASS",
+    "PASS_TO_PASS",
+    "environment_setup_commit",
+    "image",
+    "eval_type",
+    "log_parser",
+    "eval_script"
+  ],
+  "count": 50,
+  "evaluator_only": true,
+  "path": "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/dataset-evaluation",
+  "sha256": "be194b1b341d1c0421942190011b343d982631797eba9537ad944bca244d6bbc",
+  "split": "test"
+}

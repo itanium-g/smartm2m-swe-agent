@@ -1,0 +1,13 @@
+{
+  "base_commit": "e02f67ef2d03d48128e7a118bf75f0418e24e8ac",
+  "command": "python tests/runtests.py migrations.test_commands",
+  "command_sha256": "d4fb8723481c88eb123958a99ace3d6351973f1e22efec49901f7f4e34faea0c",
+  "duration_seconds": 2.915131029993063,
+  "output": "Creating test database for alias 'default'...\nCloning test database for alias 'default'...\nCloning test database for alias 'default'...\nCreating test database for alias 'other'...\nCloning test database for alias 'other'...\nCloning test database for alias 'other'...\nTesting against Django installed in '/testbed/django' with up to 2 processes\nSystem check identified no issues (0 silenced).\n..........................................................................................\n----------------------------------------------------------------------\nRan 90 tests in 1.222s\n\nOK\nDestroying test database for alias 'default'...\nDestroying test database for alias 'default'...\nDestroying test database for alias 'default'...\nDestroying test database for alias 'other'...\nDestroying test database for alias 'other'...\nDestroying test database for alias 'other'...\n",
+  "patch_sha256": "adb2a57e81ef536b30035681f3d7b3f54ffe2e31670e99f6c139aed88d818ce5",
+  "reason": "",
+  "returncode": 0,
+  "setup_commands": [],
+  "status": "passed",
+  "timed_out": false
+}

@@ -39,7 +39,9 @@ def _run_setup(root: Path, commands: tuple[str, ...], image: str = "") -> None:
             argv = [
                 "docker", "run", "--rm", "--init",
                 "--volume", f"{root}:/testbed", "--workdir", "/testbed",
-                "--env", "CI=1", "--env", "PAGER=cat", image, "bash", "-lc", command,
+                "--env", "CI=1", "--env", "PAGER=cat", "--env", "PYTHONDONTWRITEBYTECODE=1",
+                "--env", "PYTHONIOENCODING=utf-8", "--env", "LANG=C.UTF-8", "--env", "LC_ALL=C.UTF-8",
+                image, "bash", "-lc", command,
             ]
             result = subprocess.run(
                 argv,

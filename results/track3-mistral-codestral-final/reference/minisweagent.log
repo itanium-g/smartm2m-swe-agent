@@ -1,0 +1,28 @@
+2026-09-16 06:02:48,684 - minisweagent - INFO - Loading dataset /home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/dataset-generation, split test...
+2026-09-16 06:02:48,730 - minisweagent - INFO - Instance filter: 50 -> 8 instances
+2026-09-16 06:02:48,731 - minisweagent - INFO - Running on 8 instances...
+2026-09-16 06:02:48,732 - minisweagent - INFO - Building agent config from specs: ['swebench.yaml', '/home/itanium_dev99/project/smartm2m-swe-agent/configs/reference-mistral.yaml', 'model.model_kwargs.temperature=0.0', 'model.model_kwargs.seed=42', 'model.model_kwargs.max_tokens=2048', 'model.model_kwargs.timeout=120.0']
+2026-09-16 06:02:51,578 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-49f5c86b -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.django_1776_django-11815:latest sleep 2h
+2026-09-16 06:02:51,952 - minisweagent.environment - INFO - Started container minisweagent-49f5c86b with ID 57aeb18d1f6b28d7bc45af97ea6d7e21faf9f2c6c37bd3750dc19a405598eebb
+2026-09-16 06:05:07,466 - minisweagent - INFO - Saved trajectory to '/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/reference/django__django-11815/django__django-11815.traj.json'
+2026-09-16 06:05:07,471 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-36ae1755 -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.django_1776_django-11964:latest sleep 2h
+2026-09-16 06:05:07,836 - minisweagent.environment - INFO - Started container minisweagent-36ae1755 with ID 45c114b09c47883f14d3dac71b130a46209071be3fa60d49f9c015167e07eb8d
+2026-09-16 06:06:40,549 - minisweagent - INFO - Saved trajectory to '/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/reference/django__django-11964/django__django-11964.traj.json'
+2026-09-16 06:06:40,552 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-c6cde36f -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.django_1776_django-11999:latest sleep 2h
+2026-09-16 06:06:40,924 - minisweagent.environment - INFO - Started container minisweagent-c6cde36f with ID 982643810c75d261b9ed018274c7ece1b5d1c03d47ef2c13d989e20f7cad371b
+2026-09-16 06:07:56,463 - minisweagent - INFO - Saved trajectory to '/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/reference/django__django-11999/django__django-11999.traj.json'
+2026-09-16 06:07:56,466 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-754938b0 -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.django_1776_django-12039:latest sleep 2h
+2026-09-16 06:07:56,879 - minisweagent.environment - INFO - Started container minisweagent-754938b0 with ID 6d4c3181e712f12ad5157bb8f11ce7a92483fcc3c9e9440894c137eb712c1411
+2026-09-16 06:09:19,519 - minisweagent - INFO - Saved trajectory to '/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/reference/django__django-12039/django__django-12039.traj.json'
+2026-09-16 06:09:19,524 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-2aefb89c -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.django_1776_django-12262:latest sleep 2h
+2026-09-16 06:09:19,882 - minisweagent.environment - INFO - Started container minisweagent-2aefb89c with ID 88a85934bc8a4ecba2cdb12a3be5fb854389086f780d0c90e9b219c70370574e
+2026-09-16 06:10:38,669 - minisweagent - INFO - Saved trajectory to '/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/reference/django__django-12262/django__django-12262.traj.json'
+2026-09-16 06:10:38,672 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-e7eb04f4 -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.django_1776_django-12273:latest sleep 2h
+2026-09-16 06:10:39,025 - minisweagent.environment - INFO - Started container minisweagent-e7eb04f4 with ID b97d74db9c6e66d20c367c14b19587259ca9660b0e5f470342bcbe6e27ceefd1
+2026-09-16 06:12:45,407 - minisweagent - INFO - Saved trajectory to '/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/reference/django__django-12273/django__django-12273.traj.json'
+2026-09-16 06:12:45,411 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-d7d1f2f5 -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.django_1776_django-12304:latest sleep 2h
+2026-09-16 06:12:45,805 - minisweagent.environment - INFO - Started container minisweagent-d7d1f2f5 with ID 2ff6d6f0c34f43610679bfedfa651822f330fb744aba2a059777865928507841
+2026-09-16 06:15:37,968 - minisweagent - INFO - Saved trajectory to '/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/reference/django__django-12304/django__django-12304.traj.json'
+2026-09-16 06:15:37,972 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-fedc6035 -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8551:latest sleep 2h
+2026-09-16 06:15:38,371 - minisweagent.environment - INFO - Started container minisweagent-fedc6035 with ID a62bf70a83cdbb7162246e0a06fd2a749d3f5a634eb1298bdbd63646bf79ce60
+2026-09-16 06:16:49,828 - minisweagent - INFO - Saved trajectory to '/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/reference/sphinx-doc__sphinx-8551/sphinx-doc__sphinx-8551.traj.json'

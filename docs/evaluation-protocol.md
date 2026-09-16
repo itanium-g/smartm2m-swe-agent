@@ -45,23 +45,19 @@ evaluator. This avoids relying on a floating Hugging Face `main` snapshot.
 
 ## Matched arms
 
-| Setting | Locked value |
-|---|---|
-| Model | `openai/gpt-oss-120b` |
-| Endpoint | configurable, default `https://api.groq.com/openai/v1` |
-| Key env | `GROQ_API_KEY` |
-| Temperature / requested seed | `0` / `42` |
-| Max completion | `8192` tokens per call |
-| Reference / custom cap | 60 steps / 60 turns |
-| Wall limit | 2,700 seconds per arm episode |
-| Primary attempts | one per task per arm |
-| Dollar budget | \$0.15 / \$0.60 per million input/output tokens |
+| Setting | Groq Locked Value | Mistral Reproduction Value |
+|---|---|---|
+| Model | `openai/gpt-oss-120b` | `codestral-2508` |
+| Endpoint | `https://api.groq.com/openai/v1` | `https://api.mistral.ai/v1` |
+| Key env | `GROQ_API_KEY` | `MISTRAL_API_KEY` |
+| Temperature / requested seed | `0.0` / `42` | `0.0` / `42` |
+| Max completion | `8192` tokens per call | `2048` tokens per call |
+| Reference / custom cap | 60 steps / 60 turns | 60 steps / 60 turns |
+| Wall limit | 2,700 seconds per arm episode | 2,700 seconds per arm episode |
+| Primary attempts | one per task per arm | one per task per arm |
+| Dollar budget | \$0.15 / \$0.60 per MTok (in/out) | \$0.30 / \$0.90 per MTok (in/out) |
 
-The same model and request settings are used by the custom OpenAI-compatible
-transport and stock mini-swe-agent/LiteLLM. Equal turn/token caps are the
-enforceable common budget; observed token usage and any provider-reported cost
-are retained separately. A requested seed is not claimed to guarantee hosted
-determinism.
+The same model and request settings are used by the custom transport and stock mini-swe-agent/LiteLLM. Equal turn/token caps are the enforceable common budget; observed token usage and any provider-reported cost are retained separately in `usage.jsonl`. A requested seed is not claimed to guarantee hosted determinism.
 
 ## Execution and scoring
 

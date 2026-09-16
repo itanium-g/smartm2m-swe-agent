@@ -1,0 +1,12 @@
+diff --git a/django/template/library.py b/django/template/library.py
+index 20bc86dac8..6c86aed8e0 100644
+--- a/django/template/library.py
++++ b/django/template/library.py
+@@ -300,6 +300,7 @@ def parse_bits(parser, bits, params, varargs, varkw, defaults,
+     if defaults is not None:
+         # Consider the last n params handled, where n is the
+         # number of defaults.
++        unhandled_params = [p for p in unhandled_params if p not in kwonly]
+         unhandled_params = unhandled_params[:-len(defaults)]
+     if unhandled_params or unhandled_kwargs:
+         # Some positional arguments were not supplied

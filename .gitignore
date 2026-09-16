@@ -19,3 +19,7 @@ workspaces/
 .env
 *.secret
 *.key
+logs/
+test_artifacts/
+workspaces*/
+

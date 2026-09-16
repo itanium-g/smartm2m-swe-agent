@@ -1,0 +1,25 @@
+{
+  "status": "completed",
+  "command": [
+    "/usr/bin/python3",
+    "-m",
+    "swebench.harness.run_evaluation",
+    "--dataset_name",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/dataset-evaluation",
+    "--split",
+    "test",
+    "--predictions_path",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/custom/predictions.jsonl",
+    "--max_workers",
+    "1",
+    "--run_id",
+    "track3-mistral-codestral-final-custom"
+  ],
+  "returncode": 0,
+  "duration_seconds": 174.07343692598806,
+  "stdout": "Running 6 instances...\nAll instances run.\nTotal instances: 50\nInstances submitted: 8\nInstances completed: 6\nInstances incomplete: 42\nInstances resolved: 2\nInstances unresolved: 4\nInstances with likely infrastructure failures: 0\nInstances with ambiguous failures: 0\nInstances with empty patches: 2\nInstances with errors: 0\nUnstopped containers: 0\nUnremoved images: 8\nReport written to logs/evaluation/track3-mistral-codestral-final-custom/results.json\n",
+  "stderr": "\n  0%|          | 0/6 [00:00<?, ?it/s]\n 17%|\u2588\u258b        | 1/6 [00:30<02:32, 30.60s/it]\n1 ran successfully, 0 failed:  17%|\u2588\u258b        | 1/6 [00:30<02:33, 30.60s/it]\n1 ran successfully, 0 failed:  33%|\u2588\u2588\u2588\u258e      | 2/6 [01:00<02:00, 30.11s/it]\n2 ran successfully, 0 failed:  33%|\u2588\u2588\u2588\u258e      | 2/6 [01:00<02:00, 30.11s/it]\n2 ran successfully, 0 failed:  50%|\u2588\u2588\u2588\u2588\u2588     | 3/6 [01:28<01:28, 29.62s/it]\n3 ran successfully, 0 failed:  50%|\u2588\u2588\u2588\u2588\u2588     | 3/6 [01:28<01:28, 29.62s/it]\n3 ran successfully, 0 failed:  67%|\u2588\u2588\u2588\u2588\u2588\u2588\u258b   | 4/6 [01:56<00:58, 29.12s/it]\n4 ran successfully, 0 failed:  67%|\u2588\u2588\u2588\u2588\u2588\u2588\u258b   | 4/6 [01:56<00:58, 29.12s/it]\n4 ran successfully, 0 failed:  83%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258e | 5/6 [02:23<00:28, 28.68s/it]\n5 ran successfully, 0 failed:  83%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258e | 5/6 [02:23<00:28, 28.68s/it]\n5 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 6/6 [02:50<00:00, 28.42s/it]\n6 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 6/6 [02:50<00:00, 28.42s/it]\n6 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 6/6 [02:50<00:00, 28.42s/it]\n",
+  "run_id": "track3-mistral-codestral-final-custom",
+  "reason": "",
+  "working_directory": "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-codestral-final/evaluation/custom"
+}

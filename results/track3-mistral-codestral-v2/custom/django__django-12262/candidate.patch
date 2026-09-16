@@ -1,0 +1,13 @@
+diff --git a/django/template/library.py b/django/template/library.py
+index 20bc86dac8..ecfe56bef3 100644
+--- a/django/template/library.py
++++ b/django/template/library.py
+@@ -278,7 +278,7 @@ def parse_bits(parser, bits, params, varargs, varkw, defaults,
+                     # If using the keyword syntax for a positional arg, then
+                     # consume it.
+                     unhandled_params.remove(param)
+-                elif param in unhandled_kwargs:
++                elif param in unhandled_kwargs or param in kwonly:
+                     # Same for keyword-only arguments
+                     unhandled_kwargs.remove(param)
+         else:

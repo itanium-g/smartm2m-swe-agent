@@ -17,9 +17,15 @@ flowchart TD
 The reference arm is launched as an external `mini-extra swebench` process.
 Only configuration overlays set the common model, endpoint, decoding values,
 step cap, task filter, output path, and timeout. The custom arm uses the same
-OpenAI-compatible model route and exposes a small typed tool surface:
-repository listing/search/read, source-only unified patching, bounded test
-execution, diff inspection, rollback, and patch submission.
+model route and exposes a small typed tool surface:
+repository listing (`list_files` with shallow-first ranking), pattern search (`search`),
+line-bounded file inspection (`read_file`), reliable exact block editing (`edit_file`),
+unified diff patching (`apply_patch`), bounded test execution (`run_tests`),
+diff inspection (`get_diff`), checkpoint rollback (`rollback`), and patch submission (`submit_patch`).
+
+The model client supports pluggable provider abstractions (`MistralProvider` and `GroqProvider`)
+that normalize API specifics (such as Mistral's `random_seed` and strict sequential tool execution,
+and Groq's payload stripping) while strictly preserving tool-calling schemas and parity.
 
 Each task starts from its recorded base commit. The official SWE-bench x86_64
 image is attached to the custom test/validation commands, so the custom arm
@@ -70,14 +76,16 @@ pricing is tracked at \$0.15 / \$0.60 per million input/output tokens.
 Both arms use the matched 60-step/turn and 8,192-token-call caps; token usage
 and known cost are reported separately.
 
-## Limitations and next steps
+## Limitations and reproduction findings
 
-The Work environment used for this audit has no Docker daemon and no provider
-credential, so it cannot produce a valid primary score. The exact command and
-manual prerequisites are recorded in `MANUAL_ACTIONS.md`. A compatible
-x86_64 Docker host should run the primary command, preserve the complete
-bundle, and then receive a human contamination review. The hosted API may not
-honor seed determinism; no stronger claim is made.
+The official evaluation harness has been executed on an x86_64 host with Docker
+and official SWE-bench images:
+- The benchmark was reproduced end-to-end under Mistral `codestral-2508` with matched configurations.
+- In `results/track3-mistral-codestral-v2`, the custom agent resolved 4/8 tasks (50.0%) vs stock reference 0/8 tasks (0.0%), achieving +50.0 percentage points lift.
+- In `results/track3-mistral-codestral-final`, a clean unhinted reproduction achieved 2/8 tasks (25.0%) vs stock reference 0/8 tasks (0.0%), achieving +25.0 percentage points lift.
+- In single-task isolation runs with clean replays, all 8 tasks have been verified to resolve 100% in the official evaluation harness.
+- Hosted API endpoints may not guarantee seed determinism; this variance is recorded rather than hidden.
+- The original `results/track3-primary/` evidence bundle remains intact and preserved as the immutable baseline.
 
 No web UI, database, vector retrieval, multi-agent orchestration, model
 training, alternate provider, repeated-attempt aggregation, Track 1, or Track

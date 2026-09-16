@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 9359,
+  "estimated_cost_usd": 0.144723,
+  "instance_id": "sphinx-doc__sphinx-8551",
+  "last_successful_test_command": null,
+  "model_attempts": 31,
+  "model_requests": 31,
+  "patch_sha256": "e2869c05bd9f79a2c785a00aa2ed0fdfbb1a7888a7a756559de77b5580c9dcba",
+  "prompt_tokens": 454333,
+  "reason": "repeated action: run_tests with no progress",
+  "recovery_used": true,
+  "status": "loop_exhausted",
+  "total_tokens": 463692,
+  "turns": 31,
+  "validation_required": true
+}
