@@ -9,7 +9,9 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 import time
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -20,6 +22,17 @@ from .protocol import ToolCall
 
 class ToolError(RuntimeError):
     """A tool request was invalid or could not be executed."""
+
+
+def _local_command_argv(command: str) -> list[str] | str:
+    """Use the current Python when a local runner lacks the ``python`` alias."""
+    try:
+        tokens = shlex.split(command)
+    except ValueError:
+        return command
+    if tokens and tokens[0] in {"python", "python3"} and shutil.which(tokens[0]) is None:
+        return [sys.executable, *tokens[1:]]
+    return command
 
 
 @dataclass
@@ -316,19 +329,48 @@ def _is_unfiltered_test_suite_run(command: str) -> tuple[bool, str]:
     return False, ""
 
 
-def _docker_argv(root: Path, image: str, command: str) -> list[str]:
+def _docker_argv(
+    root: Path,
+    image: str,
+    command: str,
+    *,
+    container_name: str | None = None,
+) -> list[str]:
     if not image or image.startswith("-") or any(char.isspace() for char in image):
         raise ToolError("container image must be a simple image reference")
-    return [
+    argv = [
         # SWE-bench's pinned evaluator and mini-swe-agent Docker environment
         # use Docker's default network mode. Match that task environment;
         # command safety comes from the typed runner and container boundary.
         "docker", "run", "--rm", "--init",
+    ]
+    if container_name:
+        argv.extend(["--name", container_name])
+    argv.extend([
         "--volume", f"{root}:/testbed", "--workdir", "/testbed",
         "--env", "CI=1", "--env", "PAGER=cat", "--env", "PYTHONDONTWRITEBYTECODE=1",
         "--env", "PYTHONIOENCODING=utf-8", "--env", "LANG=C.UTF-8", "--env", "LC_ALL=C.UTF-8",
         image, "bash", "-lc", command,
-    ]
+    ])
+    return argv
+
+
+def _remove_timed_out_container(container_name: str) -> str:
+    """Force-stop and remove a container whose attached Docker CLI timed out."""
+    try:
+        result = subprocess.run(
+            ["docker", "rm", "--force", container_name],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=15,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return str(exc)
+    if result.returncode != 0 and "no such container" not in result.stderr.lower():
+        return result.stderr.strip() or result.stdout.strip() or f"docker rm exited {result.returncode}"
+    return ""
 
 
 def _strip_line_numbers(text: str) -> tuple[str, bool]:
@@ -735,6 +777,8 @@ class ToolRunner:
         timed_out = False
         execution_command = command
         argv: list[str] | str = command
+        container_name = ""
+        container_cleanup_error = ""
         returncode: int | None = None
         output = ""
         stdout = ""
@@ -754,11 +798,19 @@ class ToolRunner:
                         warning_msg,
                         {"error": "unfiltered_test_suite", "failure_class": "test_failure"},
                     )
-                argv = _docker_argv(self.root, self.container_image, command)
+                container_name = f"smartm2m-{uuid.uuid4().hex}"
+                argv = _docker_argv(
+                    self.root,
+                    self.container_image,
+                    command,
+                    container_name=container_name,
+                )
                 execution_command = " ".join(shlex.quote(value) for value in argv)
                 metadata_failure = ""
         else:
             metadata_failure = ""
+            argv = _local_command_argv(command)
+            execution_command = shlex.join(argv) if isinstance(argv, list) else argv
         try:
             if should_execute:
                 proc = subprocess.run(
@@ -781,6 +833,8 @@ class ToolRunner:
         except subprocess.TimeoutExpired as exc:
             timed_out = True
             returncode = None
+            if container_name:
+                container_cleanup_error = _remove_timed_out_container(container_name)
             stdout = exc.stdout if isinstance(exc.stdout, str) else ""
             stderr = exc.stderr if isinstance(exc.stderr, str) else ""
             output = stdout
@@ -791,6 +845,8 @@ class ToolRunner:
                 "running without a test filter times out. Specify a targeted test app or test file "
                 "(e.g. 'python tests/runtests.py <app_name>' or 'python -m pytest <test_path>').]"
             )
+            if container_cleanup_error:
+                output += f"\n[container cleanup failed: {container_cleanup_error}]"
         duration = time.monotonic() - started
         full_chars = len(output)
         visible = output[-self.max_output_chars :] if full_chars > self.max_output_chars else output
@@ -833,6 +889,7 @@ class ToolRunner:
             "timed_out": timed_out,
             "output_chars": full_chars,
             "truncated": full_chars > self.max_output_chars,
+            "container_cleanup_error": container_cleanup_error,
             "failure_class": metadata_failure or (
                 "infra_failure" if container_failure else
                 ("timeout" if timed_out else

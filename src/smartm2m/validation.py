@@ -9,11 +9,19 @@ import shutil
 import subprocess
 import tempfile
 import time
+import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from .tools import ToolError, _docker_argv, _git_patch, validate_test_command
+from .tools import (
+    ToolError,
+    _docker_argv,
+    _git_patch,
+    _local_command_argv,
+    _remove_timed_out_container,
+    validate_test_command,
+)
 
 _CONTAINER_FAILURE_MARKERS = (
     "cannot connect to the docker daemon",
@@ -120,13 +128,20 @@ def validate_clean_replay(
             started = time.monotonic()
             setup_output: list[str] = []
             for setup in setup_commands:
+                container_name = ""
                 try:
                     if container_image:
-                        prepared_argv: list[str] | str = _docker_argv(clean, container_image, setup)
+                        container_name = f"smartm2m-{uuid.uuid4().hex}"
+                        prepared_argv: list[str] | str = _docker_argv(
+                            clean,
+                            container_image,
+                            setup,
+                            container_name=container_name,
+                        )
                         prepared_shell = False
                     else:
-                        prepared_argv = setup
-                        prepared_shell = True
+                        prepared_argv = _local_command_argv(setup)
+                        prepared_shell = isinstance(prepared_argv, str)
                     prepared = subprocess.run(
                         prepared_argv,
                         cwd=clean,
@@ -157,6 +172,9 @@ def validate_clean_replay(
                         )
                 except subprocess.TimeoutExpired as exc:
                     output = "\n".join([*setup_output, (exc.stdout or "") if isinstance(exc.stdout, str) else "", f"\n[setup timeout after {timeout_seconds}s]"])
+                    cleanup_error = _remove_timed_out_container(container_name) if container_name else ""
+                    if cleanup_error:
+                        output += f"\n[container cleanup failed: {cleanup_error}]"
                     unavailable = bool(container_image) and _container_runtime_failed(output)
                     return ValidationResult(
                         "unavailable" if unavailable else "failed",
@@ -172,13 +190,20 @@ def validate_clean_replay(
                         setup_commands,
                     )
             timed_out = False
+            container_name = ""
             try:
                 if container_image:
-                    test_argv: list[str] | str = _docker_argv(clean, container_image, command)
+                    container_name = f"smartm2m-{uuid.uuid4().hex}"
+                    test_argv: list[str] | str = _docker_argv(
+                        clean,
+                        container_image,
+                        command,
+                        container_name=container_name,
+                    )
                     test_shell = False
                 else:
-                    test_argv = command
-                    test_shell = True
+                    test_argv = _local_command_argv(command)
+                    test_shell = isinstance(test_argv, str)
                 tested = subprocess.run(
                     test_argv,
                     cwd=clean,
@@ -200,6 +225,9 @@ def validate_clean_replay(
                     (exc.stdout or "") if isinstance(exc.stdout, str) else "",
                 ])
                 output += f"\n[timeout after {timeout_seconds}s]"
+                cleanup_error = _remove_timed_out_container(container_name) if container_name else ""
+                if cleanup_error:
+                    output += f"\n[container cleanup failed: {cleanup_error}]"
             duration = time.monotonic() - started
             unavailable = bool(container_image) and _container_runtime_failed(output)
             failed = returncode != 0 or timed_out
