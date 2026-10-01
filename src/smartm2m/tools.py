@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import inspect
 import os
@@ -423,7 +424,6 @@ class ToolRunner:
             "get_diff": self.get_diff,
             "submit_patch": self.submit_patch,
             "rollback": self.rollback,
-            "commentary": lambda **kwargs: ToolResult(True, "noted", {"commentary": kwargs}),
         }
         handler = handlers.get(call.name)
         if handler is None:
@@ -437,9 +437,17 @@ class ToolRunner:
                 {"error": "invalid_json_arguments"},
             )
         try:
+            aliases = {
+                "list_files": {"path": "prefix"},
+                "read_file": {"line_start": "start_line", "line_end": "end_line"},
+            }
+            arguments = dict(call.arguments)
+            for alias, canonical in aliases.get(call.name, {}).items():
+                if alias in arguments and canonical not in arguments:
+                    arguments[canonical] = arguments[alias]
             sig = inspect.signature(handler)
             has_varkw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
-            filtered = call.arguments if has_varkw else {k: v for k, v in call.arguments.items() if k in sig.parameters}
+            filtered = arguments if has_varkw else {k: v for k, v in arguments.items() if k in sig.parameters}
             return handler(**filtered)
         except (ToolError, TypeError, ValueError) as exc:
             return ToolResult(False, str(exc), {"error": type(exc).__name__})
@@ -577,15 +585,22 @@ class ToolRunner:
             raise ToolError("file exceeds 1 MiB read limit; search it or read a smaller file")
         lines = target.read_text(encoding="utf-8", errors="replace").splitlines()
         start = max(1, int(start_line))
-        end = len(lines) if end_line is None else min(len(lines), int(end_line))
+        end = min(len(lines), start + 119) if end_line is None else min(len(lines), int(end_line))
         if end < start:
             raise ToolError("end_line must be >= start_line")
-        # Ensure minimum window of 25 lines so model has adequate context
-        # and doesn't get trapped in a 1-line creeping loop
-        if end_line is not None and (end - start) < 20:
-            end = min(len(lines), start + 35)
-        selected = "\n".join(f"{i}: {lines[i - 1]}" for i in range(start, end + 1))
-        return ToolResult(True, selected, {"path": path, "start_line": start, "end_line": end})
+        selected_lines: list[str] = []
+        chars = 0
+        for line in lines[start - 1:end]:
+            if selected_lines and chars + len(line) + 1 > self.max_output_chars:
+                break
+            selected_lines.append(line[:self.max_output_chars])
+            chars += len(selected_lines[-1]) + 1
+        actual_end = start + len(selected_lines) - 1
+        return ToolResult(True, "\n".join(selected_lines), {
+            "path": path, "start_line": start, "end_line": actual_end,
+            "total_lines": len(lines), "truncated": actual_end < len(lines),
+            "next_start_line": actual_end + 1 if actual_end < len(lines) else None,
+        })
 
     def _checkpoint(self) -> None:
         # Keep untracked files separate: applying an untracked-file diff and
@@ -864,7 +879,8 @@ class ToolRunner:
             stderr,
         )
         self.commands.append(record)
-        current_patch_sha256 = hashlib.sha256(_git_patch(self.root).encode()).hexdigest()
+        current_patch = _git_patch(self.root)
+        current_patch_sha256 = hashlib.sha256(current_patch.encode()).hexdigest()
         self._last_test_patch_sha256 = current_patch_sha256 if returncode == 0 and not timed_out else None
         if self._last_test_patch_sha256:
             self._last_successful_test_command = command
@@ -879,7 +895,20 @@ class ToolRunner:
                 "permission denied while trying to connect",
             )
         )
-        build_failure = any(marker in lower for marker in ("syntaxerror", "indentationerror", "modulenotfounderror", "importerror"))
+        build_failure = False
+        if returncode and re.search(r"(?m)^(?:SyntaxError|IndentationError|TabError):", output):
+            # Import errors and expected exception strings in test output are
+            # insufficient evidence to discard a patch. Confirm broken syntax
+            # in an edited source file before recommending automatic rollback.
+            for relative in set(_patch_paths(current_patch)):
+                source = _safe_relative(self.root, relative)
+                if source.suffix != ".py" or not source.is_file():
+                    continue
+                try:
+                    ast.parse(source.read_text(encoding="utf-8"), filename=relative)
+                except SyntaxError:
+                    build_failure = True
+                    break
         metadata = {
             "command": command,
             "executed_command": execution_command,

@@ -55,6 +55,15 @@ def test_groq_payload_strips_reasoning_and_provider_specific_fields():
     assert len(asst_msg["tool_calls"]) == 1
 
 
+def test_groq_returns_unknown_tools_for_local_validation():
+    provider = GroqProvider(ModelConfig(provider="groq", parallel_tool_calls=False))
+    tools = [{"type": "function", "function": {"name": "read_file", "parameters": {}}}]
+    payload = provider.build_payload([], tools, temperature=0, seed=42, max_tokens=100)
+    assert payload["disable_tool_validation"] is True
+    assert payload["parallel_tool_calls"] is False
+    assert "disable_tool_validation" not in provider.build_payload([], [], temperature=0, seed=42, max_tokens=100)
+
+
 def test_redact_secrets_cleans_keys_and_tokens(monkeypatch):
     dummy_mistral = "dummy_mistral_secret_key_1234567890"
     dummy_groq = "gsk_dummy_groq_secret_key_1234567890abcdef"

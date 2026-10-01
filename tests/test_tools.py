@@ -242,6 +242,33 @@ def test_execute_filters_unexpected_kwargs(tmp_path: Path):
     assert result.content == ""
 
 
+def test_read_file_returns_bounded_copyable_source(tmp_path: Path):
+    repo = make_repo(tmp_path)
+    source = "\n".join(f"VALUE_{index} = {index}" for index in range(200)) + "\n"
+    (repo / "src" / "long.py").write_text(source)
+    runner = ToolRunner(repo, TaskSpec("synthetic__read", "Inspect.", repo_path=str(repo)), max_output_chars=300)
+    result = runner.read_file("src/long.py")
+    assert len(result.content) <= 300
+    assert source.startswith(result.content)
+    assert result.metadata["truncated"]
+    next_line = result.metadata["next_start_line"]
+    followup = runner.read_file("src/long.py", start_line=next_line)
+    assert followup.content.startswith(f"VALUE_{next_line - 1} =")
+
+
+def test_tool_aliases_preserve_requested_ranges(tmp_path: Path):
+    from smartm2m.protocol import ToolCall
+    repo = make_repo(tmp_path)
+    runner = ToolRunner(repo, TaskSpec("synthetic__aliases", "Inspect.", repo_path=str(repo)))
+    result = runner.execute(ToolCall("list", "list_files", {"path": "src"}))
+    assert result.ok
+    assert "src/maths.py" in result.content
+    result = runner.execute(ToolCall("read", "read_file", {"path": "src/maths.py", "line_start": 2, "line_end": 2}))
+    assert result.ok
+    assert result.content == "    return a - b"
+    assert not runner.execute(ToolCall("unknown", "commentary", {})).ok
+
+
 def test_search_handles_special_characters(tmp_path: Path):
     repo = make_repo(tmp_path)
     (repo / "src" / "special.py").write_text(
@@ -279,5 +306,4 @@ def test_unfiltered_test_suite_detection():
 
     unfiltered3, _ = _is_unfiltered_test_suite_run("python tests/runtests.py --settings=test_sqlite indexes.tests")
     assert not unfiltered3
-
 

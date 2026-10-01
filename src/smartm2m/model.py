@@ -19,6 +19,10 @@ from .protocol import ModelResponse, ToolCall, Usage
 class ModelError(RuntimeError):
     """A provider or response-protocol failure."""
 
+    def __init__(self, message: str, *, recoverable: bool = False):
+        super().__init__(message)
+        self.recoverable = recoverable
+
 
 def _usage(raw: dict[str, Any], config: ModelConfig) -> Usage:
     prompt = int(raw.get("prompt_tokens", raw.get("input_tokens", 0)) or 0)
@@ -177,7 +181,7 @@ class BaseModelProvider(abc.ABC):
             method="POST",
         )
         last_error: Exception | None = None
-        max_attempts = max(self.config.max_retries, 15) if self.config.provider == "groq" else self.config.max_retries
+        max_attempts = self.config.max_retries
         for attempt in range(max_attempts + 1):
             self.request_attempts += 1
             try:
@@ -187,7 +191,14 @@ class BaseModelProvider(abc.ABC):
             except urllib.error.HTTPError as exc:
                 raw_error = exc.read().decode("utf-8", errors="replace")
                 safe_error = _redact_secrets(raw_error)
-                last_error = ModelError(f"provider HTTP {exc.code}: {safe_error[:1000]}")
+                try:
+                    error_code = json.loads(raw_error).get("error", {}).get("code", "")
+                except (ValueError, AttributeError, TypeError):
+                    error_code = ""
+                last_error = ModelError(
+                    f"provider HTTP {exc.code}: {safe_error[:1000]}",
+                    recoverable=exc.code == 400 and error_code in {"tool_use_failed", "output_parse_failed"},
+                )
                 allowed_codes = {408, 409, 429, 500, 502, 503, 504}
                 if exc.code not in allowed_codes or attempt >= max_attempts:
                     raise last_error from exc
@@ -373,6 +384,11 @@ class GroqProvider(BaseModelProvider):
         if tools:
             payload["tools"] = tools
             payload["tool_choice"] = "auto"
+            # The controller checks every tool locally. Returning an unknown
+            # tool lets it provide corrective feedback rather than ending an
+            # otherwise recoverable episode at provider-side validation.
+            payload["disable_tool_validation"] = True
+            payload["parallel_tool_calls"] = self.config.parallel_tool_calls
         if seed is not None:
             payload["seed"] = seed
         return payload

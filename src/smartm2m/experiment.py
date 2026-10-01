@@ -76,6 +76,26 @@ def _utc_run_id(prefix: str) -> str:
     return f"{prefix}-{stamp}"
 
 
+def _snapshot_source(run_dir: Path) -> dict[str, Any]:
+    """Retain the actual controller source, including uncommitted improvements."""
+    package = Path(__file__).resolve().parent
+    destination = run_dir / "source" / package.name
+    destination.mkdir(parents=True)
+    hashes = {}
+    for source in sorted(package.glob("*.py")):
+        shutil.copy2(source, destination / source.name)
+        hashes[source.name] = hashlib.sha256(source.read_bytes()).hexdigest()
+    revision = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=package.parent.parent,
+        text=True, capture_output=True, check=False,
+    )
+    return {
+        "git_revision": revision.stdout.strip() if revision.returncode == 0 else None,
+        "files": hashes,
+        "sha256": hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest(),
+    }
+
+
 def preflight(config: ExperimentConfig, *, allow_unresolved: bool = False) -> dict[str, Any]:
     manifest_issues = config.validate_manifest(allow_unresolved=True)
     unresolved_issues = list(manifest_issues)
@@ -368,6 +388,7 @@ def reproduce(
     if run_dir.exists():
         raise ConfigError(f"run directory already exists: {run_dir}")
     run_dir.mkdir(parents=True, exist_ok=False)
+    source_snapshot = _snapshot_source(run_dir)
     _json_write(run_dir / "preflight.json", checks)
     _json_write(run_dir / "manifest.json", {
         "run_id": run_dir.name,
@@ -384,6 +405,7 @@ def reproduce(
         "model": config.model.__dict__,
         "reference": config.reference.__dict__,
         "environment": environment_summary(),
+        "source": source_snapshot,
     })
     (run_dir / "configs").mkdir()
     shutil.copy2(config.config_path, run_dir / "configs" / config.config_path.name)

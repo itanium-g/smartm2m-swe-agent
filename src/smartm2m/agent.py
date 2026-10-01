@@ -19,50 +19,33 @@ from .protocol import ModelClient, ModelResponse, ToolCall
 from .task import generation_payload
 from .tools import ToolResult, ToolRunner, tool_schemas
 
-SYSTEM_PROMPT = """You are the SMARTM2M Track 3 custom software-engineering agent.
-Solve the issue in the supplied repository using the available typed tools.
+SYSTEM_PROMPT = """You are the SMARTM2M software-engineering agent.
+Solve the issue using the supplied repository and typed tools.
 
-1. Inspect before editing:
-   - Identify the relevant package directory or subsystem using list_files or search. When using list_files, list the package directory to see all candidate module files.
-   - Search for specific code identifiers, symbols, class names, method names, or error messages from the issue.
-   - If the issue description quotes an error message or exception phrase, search for that exact error text (without dynamic arguments) to jump directly to where the check or exception is defined.
-   - Formulate short, single-symbol search queries for specific class or method names relevant to the issue. Search broadly across the package (path='.') rather than guessing deep subdirectories. Avoid concatenating multiple unrelated terms into one query, as search matches the exact phrase.
-   - When inspecting a function or method definition found by search, call read_file starting from that definition downward into the function body rather than reading preceding caller lines.
-   - Issue descriptions often contain user reproduction scripts, example models, or example test cases (e.g. 'class Item(models.Model): ...' or 'def reset(self): ...'). These are examples demonstrating the bug; they do NOT exist in the codebase. Do not search for or add reproduction models or helper methods to library classes. Locate and fix the underlying library package implementation.
-   - Beware of placeholder or metasyntactic names in issue descriptions (e.g. 'FOO', 'FIELD', 'MyModel', '<name>'). In library implementations, these are constructed dynamically (e.g. '%s_display' or formatting strings) rather than appearing literally. Search for the invariant keyword or suffix (e.g. '_display', 'choices').
-   - When an issue involves code generation or writing files (such as migration files or schema representations), inspect serializer or writer classes (e.g. search for 'Serializer' or 'serialize' or check 'serializer.py').
-   - Apply standard Python language and architecture principles:
-     * Metaclasses vs classes: If a library feature requires class objects themselves to exhibit specific behavior (such as preventing template engines from calling classes without arguments), configure the metaclass rather than defining attributes on enum/model subclasses.
-     * Enums: Accessing an enum member by name is done via item subscript indexing (e.g. Enum['NAME']), whereas accessing by value is done via function call (e.g. Enum(val)). When serializing enum members by name, replace the entire block from the serializer call through the return statement in one edit: serialize the member name (self.value.name) and format with subscript brackets ('%s.%s[%s]') instead of parentheses ('%s.%s(%s)'). If enum instances should display their choice value when converted to strings, implement __str__ on the base class to return str(self.value).
-     * Dynamic attribute attachment: When a library dynamically attaches helper methods to a model or class (such as via setattr in contribute_to_class), ensure it does not overwrite custom methods explicitly defined by the user in cls.__dict__.
-     * Multi-table model inheritance: When updating or resetting primary key values on a child model instance, also update the corresponding inherited parent link fields that point to the parent model.
-     * Function signature and argument parsing: Distinguish positional parameters, keyword-only parameters (kwonly), and variable keyword arguments (**kwargs). When validating unexpected keyword arguments, ensure keyword-only parameters are treated as valid rather than unexpected.
-     * Cross-reference resolution: When resolving unqualified types or references in docstrings or annotations, propagate the current document/module/class environment context into the reference node.
-     * SQL string formatting: Ensure proper whitespace separators between identifiers, column names, and syntax suffixes.
-   - Read candidate source files with read_file around the lines you plan to change.
-
-2. Formulate a minimal, general fix based strictly on observed repository evidence:
-   - Once you locate the candidate function or method, inspect it with read_file and proceed directly to edit_file.
-   - Follow standard language semantics and the issue's requirements.
-   - To modify source code, prefer edit_file(path, old_text, new_text). Provide the exact text to replace from read_file and enough surrounding lines in old_text so it matches uniquely. Do NOT include line numbers or line number prefixes (like '123: ') in old_text or new_text; use the raw code only. You may also use apply_patch with a strict unified diff.
-   - Do NOT edit tests, documentation, build files (setup.py, pyproject.toml), configuration, or generated files. Modify only the package source code implementation (*.py).
-
-3. Verify with targeted testing:
-   - Run a narrow targeted test using run_tests to verify your fix. Select the test suite under tests/ matching the package subsystem you modified:
-     * For Django: run 'python tests/runtests.py <app_or_subsystem>' matching the modified package:
-       - for migrations: run 'python tests/runtests.py migrations.test_commands' (do not run the full 'migrations' suite, as test_writer contains pre-fix assertions)
-       - for model fields: run 'python tests/runtests.py model_fields'
-       - for choices/enums: run 'python tests/runtests.py model_enums'
-       - for templates: run 'python tests/runtests.py template_tests.test_custom'
-       - for model inheritance: run 'python tests/runtests.py model_inheritance_regress'
-       - for indexes: run 'python tests/runtests.py indexes'
-     * For pytest repositories (e.g. Sphinx): run 'python -m pytest tests/<test_file>.py'.
-     Never run without a targeted test app or test file, as running the full suite will time out.
-   - Check your diff with get_diff to ensure your changes are minimal, correct, and contain no unintended modifications.
-   - Call submit_patch only after observing a test result with exit code 0 that validates your fix. Never claim a test passed without observing exit code 0.
-   - If an edit or test fails, read the error carefully and adjust your approach. Do not immediately roll back on test failures: rollback discards all your work. Keep the file in its edited state and use edit_file to adjust or refine your fix.
-   - If an existing regression test in the repo fails solely because its assertion expected the pre-fix behavior being changed by the issue, do NOT touch test files. Run another targeted test in that subsystem to confirm that you introduced no unexpected regressions and obtain clean test validation evidence before submitting.
-4. Do not guess hidden tests or evaluator data.
+1. Inspect the implementation before editing. List the relevant package, search
+   for a short symbol or exact error, then read the surrounding function body.
+   Issue examples describe behavior; their helper classes may not exist in the
+   repository. Search invariant symbols rather than example names.
+2. Explain the cause using the observed code. Make a minimal general change to
+   package source. Prefer edit_file with an exact, unique block copied from the
+   current read_file output. Re-read after a rejected edit or rollback.
+   Do not edit tests, documentation, configuration, build files, or generated
+   files. You may read existing tests to understand expected behavior.
+3. Find the repository's native test runner and select a test file, module, or
+   subsystem relevant to the change. Declared default commands may be broad;
+   inspect the repository before choosing one. Use the project's runner rather
+   than assuming pytest is installed. Diagnose assertion failures in place.
+   An import failure can mean the selected test name or environment is wrong;
+   inspect the diagnostic before changing or discarding source code.
+4. Use get_diff to review the complete change. After a relevant test passes,
+   call submit_patch. Every edit invalidates earlier test evidence. A failing
+   relevant test remains evidence of a problem; do not select unrelated passing
+   tests to bypass it. Clean replay and official grading happen after submission.
+5. Change approach when an action repeats without progress. Inspect a different
+   symbol, read another range, or refine the existing change. Rollback is for a
+   confirmed source break, not for an ordinary assertion or repeated command.
+6. Use only issue text and repository evidence. Do not retrieve gold patches,
+   hidden tests, evaluation labels, or solutions from outside the workspace.
 """
 
 
@@ -129,25 +112,47 @@ def _tool_message(call: ToolCall, result: ToolResult) -> dict[str, Any]:
 
 
 def _prune_history(messages: list[dict[str, Any]], max_chars: int = 60000) -> list[dict[str, Any]]:
-    """Prune very long outputs from older tool messages while preserving recent turns."""
-    total_len = sum(len(str(m.get("content") or "")) for m in messages)
-    if total_len <= max_chars:
-        return messages
-    cutoff = len(messages) - 6
-    if cutoff <= 2:
+    """Bound context without breaking JSON tool output or tool-call pairing."""
+    def size(items: list[dict[str, Any]]) -> int:
+        return len(json.dumps(items, ensure_ascii=False))
+
+    if size(messages) <= max_chars:
         return messages
     pruned = []
-    for idx, msg in enumerate(messages):
-        if idx < 2 or idx >= cutoff or msg.get("role") != "tool":
-            pruned.append(msg)
+    cutoff = len(messages) - 6
+    for index, message in enumerate(messages):
+        if index < 2 or index >= cutoff or message.get("role") != "tool":
+            pruned.append(message)
             continue
-        content = str(msg.get("content") or "")
+        try:
+            payload = json.loads(str(message.get("content") or ""))
+        except (ValueError, TypeError):
+            pruned.append(message)
+            continue
+        if not isinstance(payload, dict) or not isinstance(payload.get("content"), str):
+            pruned.append(message)
+            continue
+        content = payload["content"]
         if len(content) > 1000:
-            truncated = content[:400] + "\n[... truncated older tool output ...]\n" + content[-400:]
-            pruned.append({**msg, "content": truncated})
+            payload["content"] = content[:400] + "\n[older output shortened]\n" + content[-400:]
+            pruned.append({**message, "content": json.dumps(payload, ensure_ascii=False)})
         else:
-            pruned.append(msg)
-    return pruned
+            pruned.append(message)
+    prefix = pruned[:2]
+    history = pruned[2:]
+    omitted = False
+    notice = {"role": "user", "content": (
+        "Earlier complete tool interactions were omitted to bound context. "
+        "The workspace still contains your edits. Use get_diff or read_file to inspect its current state."
+    )}
+    # Remove whole assistant/tool exchanges, retaining at least two recent turns.
+    while size(prefix + ([notice] if omitted else []) + history) > max_chars:
+        starts = [i for i, message in enumerate(history) if message.get("role") == "assistant"]
+        if len(starts) <= 2:
+            break
+        history = history[starts[1]:]
+        omitted = True
+    return prefix + ([notice] if omitted else []) + history
 
 
 def _event(kind: str, **values: Any) -> dict[str, Any]:
@@ -177,7 +182,7 @@ class CustomAgent:
         ]
         events: list[dict[str, Any]] = []
         seen: dict[str, int] = {}
-        last_read_file = ""
+        last_read_signature = ""
         consecutive_file_reads = 0
         recovery_used = False
         inspected = False
@@ -187,6 +192,7 @@ class CustomAgent:
         completion_tokens = 0
         total_tokens = 0
         turns = 0
+        consecutive_protocol_errors = 0
         logical_requests_before = int(getattr(self.model, "logical_requests", 0))
         request_attempts_before = int(getattr(self.model, "request_attempts", logical_requests_before))
         status = "provider_error"
@@ -198,7 +204,9 @@ class CustomAgent:
                 status, reason = "wall_time_exhausted", "episode wall-time limit reached"
                 break
             turns += 1
-            send_messages = _prune_history(messages)
+            send_messages = _prune_history(
+                messages, max_chars=24000 if self.model_config.provider == "groq" else 60000
+            )
             try:
                 response = self.model.complete(
                     send_messages,
@@ -209,8 +217,19 @@ class CustomAgent:
                 )
             except ModelError as exc:
                 events.append(_event("model_error", error=str(exc)))
+                if exc.recoverable and consecutive_protocol_errors < 2:
+                    consecutive_protocol_errors += 1
+                    cost_known = False
+                    recovery_used = True
+                    messages.append({"role": "user", "content": (
+                        "The provider could not parse your previous tool response. "
+                        "Call exactly one of the listed tools with valid JSON arguments. "
+                        "Do not invent tool names or use a commentary tool."
+                    )})
+                    continue
                 status, reason = "provider_error", str(exc)
                 break
+            consecutive_protocol_errors = 0
             usage = response.usage
             prompt_tokens += usage.prompt_tokens
             completion_tokens += usage.completion_tokens
@@ -328,19 +347,11 @@ class CustomAgent:
                                 "The last patch caused a syntax/import/build failure. The controller restored the latest checkpoint. Diagnose the observed failure and apply a corrected source-only change."
                             )
                     elif not result.ok:
-                        test_cmd = str(call.arguments.get("command", ""))
-                        alt_hint = ""
-                        if "test_writer" in test_cmd:
-                            alt_hint = " Note: migrations.test_writer contains assertions expecting the pre-fix format. Run 'python tests/runtests.py migrations.test_commands' to verify migrations."
-                        elif "test_loaders" in test_cmd:
-                            alt_hint = " Run 'python tests/runtests.py template_tests.test_custom' to verify template filters and tags."
                         user_feedback.append(
-                            "Tests did not pass (exit code non-zero). Inspect the test failure and assertion error above. "
-                            "Do NOT roll back: diagnose the failure and use edit_file to refine your code in place. "
-                            "If the failure shows a difference in syntax or representation (such as subscription brackets [] vs call parentheses ()), "
-                            "refine your edit to match the expected format. "
-                            "If the only failing test is an existing regression test asserting the old buggy behavior, "
-                            f"run another targeted test app in the same subsystem to verify no unexpected regressions, and submit.{alt_hint}"
+                            "Tests did not pass. Inspect the diagnostic and the relevant existing tests. "
+                            "Keep the current source change while diagnosing ordinary failures. "
+                            "If the runner or target is invalid, select a valid relevant target; "
+                            "otherwise refine the implementation until the relevant tests pass."
                         )
 
                 if call.name in {"search", "read_file", "list_files"}:
@@ -372,53 +383,44 @@ class CustomAgent:
                                 "You can verify your change immediately with run_tests."
                             )
 
-                if call.name == "read_file":
-                    rf_path = call.arguments.get("path", "")
-                    if rf_path == last_read_file:
+                if call.name == "read_file" and result.ok:
+                    read_signature = json.dumps(call.arguments, sort_keys=True) + runner.state_hash()
+                    if read_signature == last_read_signature:
                         consecutive_file_reads += 1
                     else:
-                        last_read_file = rf_path
+                        last_read_signature = read_signature
                         consecutive_file_reads = 1
-                    if consecutive_file_reads in {4, 5}:
+                    if consecutive_file_reads >= 4:
                         user_feedback.append(
-                            f"You have read {rf_path} {consecutive_file_reads} times consecutively. "
-                            "You have sufficient context. Formulate your minimal fix now and apply it using edit_file(path, old_text, new_text)."
+                            "The same file range has been read repeatedly without changes. "
+                            "Read a different range or symbol, or apply a fix based on the current evidence."
                         )
-                    elif consecutive_file_reads >= 6:
-                        status, reason = "loop_exhausted", f"repeated action: read_file on {rf_path} with no progress"
+                    if consecutive_file_reads >= 6:
+                        status, reason = "loop_exhausted", "repeated read of the same range without progress"
                         break
-                elif call.name in {"edit_file", "apply_patch"}:
-                    last_read_file = ""
+                else:
+                    last_read_signature = ""
                     consecutive_file_reads = 0
 
-                if call.name in {"apply_patch", "edit_file", "run_tests", "rollback", "submit_patch"}:
-                    try:
-                        state = runner.state_hash()
-                    except Exception as exc:  # keep evidence even if a workspace becomes unhealthy
-                        state = f"state-error:{exc}"
+                if call.name == "run_tests" and result.ok:
+                    user_feedback.append(
+                        "The current patch passed this test command. Review get_diff and submit_patch "
+                        "when the command covers the issue; rerun only after another edit or for additional coverage."
+                    )
+
+                if call.name in {"apply_patch", "edit_file", "run_tests", "rollback", "submit_patch"} and not result.ok:
+                    state = runner.state_hash()
                     signature = hashlib.sha256((call.name + json.dumps(call.arguments, sort_keys=True) + state).encode()).hexdigest()
                     seen[signature] = seen.get(signature, 0) + 1
-                    if seen[signature] == 2 and not recovery_used:
-                        if runner.checkpoints:
-                            rollback = runner.rollback()
-                            recovery_used = True
-                            events.append(_event("loop_recovery", repeated_action=call.name, result=rollback.content))
-                            user_feedback.append(
-                                f"A repeated action was detected for {call.name}. The controller rolled back once. "
-                                "Change strategy: inspect a different relevant file, use edit_file on package source code, or formulate a different change."
-                            )
-                        else:
-                            user_feedback.append(
-                                f"Repeated action: you already called {call.name} with these exact arguments. "
-                                "Do not repeat rejected edits or failed commands. Modify the source code under the package directory."
-                            )
-                    elif seen[signature] in {3, 4}:
+                    if seen[signature] == 2:
+                        recovery_used = True
+                        events.append(_event("loop_recovery", repeated_action=call.name, result="workspace preserved"))
                         user_feedback.append(
-                            f"Repeated action: {call.name} has been called {seen[signature]} times in the same workspace state with no progress. "
-                            "You must change your approach: read surrounding context lines, check the error message carefully, or edit a different function."
+                            f"Repeated failed action: {call.name}. Your source changes are preserved. "
+                            "Read the current code and diagnostic, then change the arguments or implementation."
                         )
                     elif seen[signature] >= 5:
-                        status, reason = "loop_exhausted", f"repeated action: {call.name} with no progress"
+                        status, reason = "loop_exhausted", f"repeated failed action: {call.name} with no progress"
                         break
 
 
