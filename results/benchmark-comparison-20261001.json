@@ -1,0 +1,25 @@
+[
+  {
+    "provider": "mistral",
+    "run_id": "track3-mistral-improved-20261001T161703Z",
+    "reference_resolved": 0,
+    "custom_resolved": 0,
+    "expected_count": 8,
+    "source_revision": "baa06626c7b0ad47a07a53e7689822bfd9299f5e",
+    "checksums_verified": 108,
+    "status": "completed"
+  },
+  {
+    "provider": "groq",
+    "run_id": "track3-groq-improved-20261001T161703Z",
+    "status": "blocked_provider_quota",
+    "reference_resolved": null,
+    "custom_resolved": null,
+    "expected_count": 8,
+    "reference_episodes_completed": 8,
+    "custom_episodes_completed": 1,
+    "official_evaluation_completed": false,
+    "source_revision": "baa06626c7b0ad47a07a53e7689822bfd9299f5e",
+    "checksums_verified": 48
+  }
+]

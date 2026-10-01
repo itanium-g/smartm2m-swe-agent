@@ -1,0 +1,29 @@
+{
+  "config_sha256": "e7a4d7241d409010867c7074aa2d67e1813e24112019a1dfbe2d8a76a2ba6539",
+  "docker_server_version": "29.8.0",
+  "environment": {
+    "docker": "/usr/bin/docker",
+    "git": "/usr/bin/git",
+    "machine": "x86_64",
+    "platform": "linux",
+    "python": "3.13.5 (main, Aug 10 2026, 12:06:59) [GCC 14.2.0]"
+  },
+  "errors": [],
+  "expected_count": 8,
+  "lock_fingerprint": "e5b0b8a945dd1562e7523a9c3a06fad2e3d19ace97632b7f229b632f78d61f80",
+  "manifest_path": "/home/itanium_dev99/project/smartm2m-swe-agent/tasks/evaluation.json",
+  "manifest_sha256": "2290021ff6548e029fb7aec34f2638b79dcc30be569ef4cec2e188313d56e540",
+  "ok": true,
+  "provider_preflight": {
+    "model": "openai/gpt-oss-120b",
+    "multi_turn_tool_test": "passed",
+    "ok": true,
+    "provider": "groq",
+    "turn1_tool": "calculate_test_sum",
+    "turn2_response": true
+  },
+  "reference_version_output": "This is mini-swe-agent version 2.4.6.\nCheck the v2 migration guide at https://klieret.short.gy/mini-v2-migration\nLoading global config from '/home/itanium_dev99/.config/mini-swe-agent/.env'\nThis is the central entry point for all extra commands from mini-swe-agent.\n\nAvailable sub-commands:\n\n  config: Manage the global config file\n  inspect or i or inspector: Run inspector (browse trajectories)\n  swebench: Evaluate on SWE-bench (batch mode)\n  swebench-single: Evaluate on SWE-bench (single instance)\n  programbench: Run on ProgramBench (batch mode)",
+  "tasks": 8,
+  "unresolved_manifest_errors": [],
+  "warnings": []
+}

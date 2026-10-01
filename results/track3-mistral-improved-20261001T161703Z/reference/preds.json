@@ -1,0 +1,42 @@
+{
+  "django__django-11815": {
+    "model_name_or_path": "mistral/codestral-2508",
+    "instance_id": "django__django-11815",
+    "model_patch": ""
+  },
+  "django__django-11964": {
+    "model_name_or_path": "mistral/codestral-2508",
+    "instance_id": "django__django-11964",
+    "model_patch": ""
+  },
+  "django__django-11999": {
+    "model_name_or_path": "mistral/codestral-2508",
+    "instance_id": "django__django-11999",
+    "model_patch": ""
+  },
+  "django__django-12039": {
+    "model_name_or_path": "mistral/codestral-2508",
+    "instance_id": "django__django-12039",
+    "model_patch": ""
+  },
+  "django__django-12262": {
+    "model_name_or_path": "mistral/codestral-2508",
+    "instance_id": "django__django-12262",
+    "model_patch": ""
+  },
+  "django__django-12273": {
+    "model_name_or_path": "mistral/codestral-2508",
+    "instance_id": "django__django-12273",
+    "model_patch": ""
+  },
+  "django__django-12304": {
+    "model_name_or_path": "mistral/codestral-2508",
+    "instance_id": "django__django-12304",
+    "model_patch": "diff --git a/django/db/models/enums.py b/django/db/models/enums.py\nindex f48143ddaf..8cb3da0665 100644\n--- a/django/db/models/enums.py\n+++ b/django/db/models/enums.py\n@@ -59,6 +59,7 @@ class ChoicesMeta(enum.EnumMeta):\n \n \n class Choices(enum.Enum, metaclass=ChoicesMeta):\n+    do_not_call_in_templates = True\n     \"\"\"Class for creating enumerated choices.\"\"\"\n \n     def __str__(self):\n"
+  },
+  "sphinx-doc__sphinx-8551": {
+    "model_name_or_path": "mistral/codestral-2508",
+    "instance_id": "sphinx-doc__sphinx-8551",
+    "model_patch": ""
+  }
+}

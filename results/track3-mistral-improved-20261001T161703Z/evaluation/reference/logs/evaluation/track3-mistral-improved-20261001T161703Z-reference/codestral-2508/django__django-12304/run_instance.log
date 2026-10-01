@@ -1,0 +1,44 @@
+2026-10-01 16:45:55,226 - INFO - Creating container for django__django-12304...
+2026-10-01 16:45:55,361 - INFO - Container for django__django-12304 created: 41bba4b650760ef18164f7b7061388b28c635e5de34ab4bb4e59ca671052edcc
+2026-10-01 16:45:55,620 - INFO - Container for django__django-12304 started: 41bba4b650760ef18164f7b7061388b28c635e5de34ab4bb4e59ca671052edcc
+2026-10-01 16:45:55,621 - INFO - Intermediate patch for django__django-12304 written to logs/evaluation/track3-mistral-improved-20261001T161703Z-reference/codestral-2508/django__django-12304/patch.diff, now applying to container...
+2026-10-01 16:45:55,770 - INFO - >>>>> Applied Patch:
+Checking patch django/db/models/enums.py...
+Applied patch django/db/models/enums.py cleanly.
+
+2026-10-01 16:45:57,633 - INFO - Git diff before:
+diff --git a/django/db/models/enums.py b/django/db/models/enums.py
+index f48143ddaf..8cb3da0665 100644
+--- a/django/db/models/enums.py
++++ b/django/db/models/enums.py
+@@ -59,6 +59,7 @@ class ChoicesMeta(enum.EnumMeta):
+ 
+ 
+ class Choices(enum.Enum, metaclass=ChoicesMeta):
++    do_not_call_in_templates = True
+     """Class for creating enumerated choices."""
+ 
+     def __str__(self):
+2026-10-01 16:45:57,636 - INFO - Eval script for django__django-12304 written to logs/evaluation/track3-mistral-improved-20261001T161703Z-reference/codestral-2508/django__django-12304/eval.sh; copying to container...
+2026-10-01 16:46:04,171 - INFO - Test runtime: 6.43 seconds
+2026-10-01 16:46:04,171 - INFO - Test output for django__django-12304 written to logs/evaluation/track3-mistral-improved-20261001T161703Z-reference/codestral-2508/django__django-12304/test_output.txt
+2026-10-01 16:46:04,269 - INFO - Git diff after:
+diff --git a/django/db/models/enums.py b/django/db/models/enums.py
+index f48143ddaf..8cb3da0665 100644
+--- a/django/db/models/enums.py
++++ b/django/db/models/enums.py
+@@ -59,6 +59,7 @@ class ChoicesMeta(enum.EnumMeta):
+ 
+ 
+ class Choices(enum.Enum, metaclass=ChoicesMeta):
++    do_not_call_in_templates = True
+     """Class for creating enumerated choices."""
+ 
+     def __str__(self):
+2026-10-01 16:46:04,269 - INFO - Grading answer for django__django-12304...
+2026-10-01 16:46:04,272 - INFO - report: {'django__django-12304': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': False, 'resolved': False, 'infra_failure': False}}
+Result for django__django-12304: resolved: False
+2026-10-01 16:46:04,273 - INFO - Attempting to stop container sweb.eval.django__django-12304.track3-mistral-improved-20261001T161703Z-reference...
+2026-10-01 16:46:19,591 - INFO - Container sweb.eval.django__django-12304.track3-mistral-improved-20261001T161703Z-reference stopped successfully.
+2026-10-01 16:46:19,591 - INFO - Attempting to remove container sweb.eval.django__django-12304.track3-mistral-improved-20261001T161703Z-reference...
+2026-10-01 16:46:19,654 - INFO - Container sweb.eval.django__django-12304.track3-mistral-improved-20261001T161703Z-reference removed successfully.

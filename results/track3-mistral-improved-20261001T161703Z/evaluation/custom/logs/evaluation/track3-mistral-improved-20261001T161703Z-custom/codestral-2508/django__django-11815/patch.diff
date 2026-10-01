@@ -1,0 +1,13 @@
+diff --git a/django/db/migrations/operations/fields.py b/django/db/migrations/operations/fields.py
+index 402dae2829..c4b3746de5 100644
+--- a/django/db/migrations/operations/fields.py
++++ b/django/db/migrations/operations/fields.py
+@@ -95,6 +95,8 @@ class AddField(FieldOperation):
+             field.default = NOT_PROVIDED
+         else:
+             field = self.field
++        if isinstance(field.default, enum.Enum):
++            field.default = field.default.name
+         state.models[app_label, self.model_name_lower].fields.append((self.name, field))
+         # Delay rendering of relationships if it's not a relational field
+         delay = not field.is_relation

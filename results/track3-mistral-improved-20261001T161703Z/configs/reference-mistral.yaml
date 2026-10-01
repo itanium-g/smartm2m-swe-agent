@@ -1,0 +1,17 @@
+# Loaded after mini-swe-agent's pinned built-in swebench.yaml.
+# Configuration overlay for Mistral models (e.g. codestral-2508).
+# The upstream agent, prompt, parser, and environment implementation remain untouched.
+agent:
+  step_limit: 60
+  cost_limit: 1000000
+environment:
+  timeout: 120
+model:
+  model_kwargs:
+    temperature: 0
+    seed: 42
+    max_tokens: 2048
+    timeout: 120
+    drop_params: true
+    parallel_tool_calls: false
+  cost_tracking: ignore_errors

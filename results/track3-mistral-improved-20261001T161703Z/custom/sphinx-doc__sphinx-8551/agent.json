@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 7831,
+  "estimated_cost_usd": 0.2081598,
+  "instance_id": "sphinx-doc__sphinx-8551",
+  "last_successful_test_command": null,
+  "model_attempts": 60,
+  "model_requests": 60,
+  "patch_sha256": "0b3fcb8c0d152dafd662518a74884ca2250d3005ad217f184591ca6ce47c6257",
+  "prompt_tokens": 670373,
+  "reason": "episode turn limit reached",
+  "recovery_used": true,
+  "status": "turn_limit_exhausted",
+  "total_tokens": 678204,
+  "turns": 60,
+  "validation_required": true
+}

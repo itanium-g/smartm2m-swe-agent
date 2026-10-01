@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 0,
+  "estimated_cost_usd": 0.0,
+  "instance_id": "sphinx-doc__sphinx-8551",
+  "last_successful_test_command": null,
+  "model_attempts": 6,
+  "model_requests": 1,
+  "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "prompt_tokens": 0,
+  "reason": "provider HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `openai/gpt-oss-120b` in organization `[ORGANIZATION]` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 198597, Requested 2174. Please try again in 5m33.072s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n",
+  "recovery_used": false,
+  "status": "provider_error",
+  "total_tokens": 0,
+  "turns": 1,
+  "validation_required": true
+}

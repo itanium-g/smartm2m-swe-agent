@@ -1,0 +1,101 @@
+{
+  "source": {
+    "files": {
+      "__init__.py": "5e52c573d6a91e0105834e7aa3cbfa9721a4974887def83110be2599d7de9039",
+      "__main__.py": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+      "agent.py": "355a266966b1933e5adc714f54a6f46a8a95068bbda117a0dd6f987dbfb8aee8",
+      "cli.py": "ce9faed4d8766fd551752a392a117684dd135956b63ff3e7231423e90f4fe6b0",
+      "config.py": "cf1a351276f35833f5f820da4935a0dda007f54944efabc90da621fc47b2198e",
+      "dataset.py": "066954c413b0ca40ee48a59f9e8b8ed39ddab91137084d66c24f462b8804742a",
+      "evaluator.py": "3f2e6b88ad5f34fdfb270ae08c8e94bbddeafb7e3e5d19d27c9e40ba49cf75de",
+      "experiment.py": "2ad44b45b4a52a70560c6571be18f18386b1b95acf48395a998130d8a95b345d",
+      "model.py": "cbae6ee11b5246b39adf2968bfc8aaa5204a35fa2c5b02b9464d23b03350b01b",
+      "protocol.py": "8e9a1e803942c48c51b99ffdfeac90fca4a6646956c4700c4d335e689417c38a",
+      "reference.py": "6ac8ba8946b99ed7f551a6423ec7eab9eee0a377815f53cd537a467d9a413280",
+      "reporting.py": "f25fba96b5d2b6dbb2a22bc23b46e8ede5ab274bfb2a362eac3614023bb65335",
+      "smoke.py": "a7d46c1bd37c08246221bfc15e9f83ae8d322aa485a895b6c0d017bfc5375f1e",
+      "task.py": "64bbb2f7f970309b4b8b9dc26f7143782f527ea8a53d7f7ab6566419e07e0ffc",
+      "tools.py": "ff8633525d2de473c1a20eb3cf43ce7c5035488f6a72cbcba9bfef96fbb10de5",
+      "validation.py": "c1399558a0503f96f8a2088cb0a0c8b82444adc18fd5d89f94434f276d5dbfdb"
+    },
+    "git_revision": "baa06626c7b0ad47a07a53e7689822bfd9299f5e",
+    "sha256": "f17df58623fc2157464f69c56a1d4a59eec61b4f0ef3ee20ad5f418e2829bd06"
+  },
+  "upstream": {
+    "mini-swe-agent": {
+      "url": "https://github.com/SWE-agent/mini-swe-agent.git",
+      "vcs_info": {
+        "commit_id": "a83fcae82d2a08f0ee0c688f9d137b3566c097f8",
+        "requested_revision": "a83fcae82d2a08f0ee0c688f9d137b3566c097f8",
+        "vcs": "git"
+      }
+    },
+    "swebench": {
+      "url": "https://github.com/SWE-bench/SWE-bench.git",
+      "vcs_info": {
+        "commit_id": "02e7a74ffd0b707aab73d203fe87bdc7c76afc8e",
+        "requested_revision": "02e7a74ffd0b707aab73d203fe87bdc7c76afc8e",
+        "vcs": "git"
+      }
+    }
+  },
+  "images": [
+    {
+      "image": "docker.io/swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8551:latest",
+      "id": "sha256:7ef3c26b1f402bcae518faddbdea62e12496a29b8d49b582a752874df1a5cd57",
+      "repo_digests": [
+        "swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8551@sha256:7ef3c26b1f402bcae518faddbdea62e12496a29b8d49b582a752874df1a5cd57"
+      ]
+    },
+    {
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-11999:latest",
+      "id": "sha256:3c7e7f035f611b17f2093ee6409364bc28cce8b9bac266b9590db762d197607e",
+      "repo_digests": [
+        "swebench/sweb.eval.x86_64.django_1776_django-11999@sha256:3c7e7f035f611b17f2093ee6409364bc28cce8b9bac266b9590db762d197607e"
+      ]
+    },
+    {
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-11815:latest",
+      "id": "sha256:19b66392c9872e6d07b331b0ed59466c3e6c3588bc4cdd89f56f8767dc774f8a",
+      "repo_digests": [
+        "swebench/sweb.eval.x86_64.django_1776_django-11815@sha256:19b66392c9872e6d07b331b0ed59466c3e6c3588bc4cdd89f56f8767dc774f8a"
+      ]
+    },
+    {
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-12304:latest",
+      "id": "sha256:46ad662e0ab1ab9417a26ceae392395f255634a054c25faf0fcfcd43aa52702c",
+      "repo_digests": [
+        "swebench/sweb.eval.x86_64.django_1776_django-12304@sha256:46ad662e0ab1ab9417a26ceae392395f255634a054c25faf0fcfcd43aa52702c"
+      ]
+    },
+    {
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-12273:latest",
+      "id": "sha256:ceea46664eff0d02e627ee17f0f9230e5c20a1debf3eb1ca2b53c7ca476210aa",
+      "repo_digests": [
+        "swebench/sweb.eval.x86_64.django_1776_django-12273@sha256:ceea46664eff0d02e627ee17f0f9230e5c20a1debf3eb1ca2b53c7ca476210aa"
+      ]
+    },
+    {
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-12262:latest",
+      "id": "sha256:23c0777e08a37bd0643f7638eaca9c57d1ee16fca79b6312b8d6de7fd1b5e7da",
+      "repo_digests": [
+        "swebench/sweb.eval.x86_64.django_1776_django-12262@sha256:23c0777e08a37bd0643f7638eaca9c57d1ee16fca79b6312b8d6de7fd1b5e7da"
+      ]
+    },
+    {
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-12039:latest",
+      "id": "sha256:bd4dc8875144f8f3e0b8866575f9ab564b51774a71fa954cb8e4a9d34484a90c",
+      "repo_digests": [
+        "swebench/sweb.eval.x86_64.django_1776_django-12039@sha256:bd4dc8875144f8f3e0b8866575f9ab564b51774a71fa954cb8e4a9d34484a90c"
+      ]
+    },
+    {
+      "image": "docker.io/swebench/sweb.eval.x86_64.django_1776_django-11964:latest",
+      "id": "sha256:098474801410af7303f0814d0d8557791ca2f55e455e5db766c3b3d0a9826df2",
+      "repo_digests": [
+        "swebench/sweb.eval.x86_64.django_1776_django-11964@sha256:098474801410af7303f0814d0d8557791ca2f55e455e5db766c3b3d0a9826df2"
+      ]
+    }
+  ],
+  "reference_config_sha256": "9311a9d19174bbb9f2be9eba92bf20a8ea7f9e93e0e1dda76a56d70ad0951427"
+}

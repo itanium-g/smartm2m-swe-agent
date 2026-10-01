@@ -1,0 +1,47 @@
+2026-10-01 16:46:53,645 - INFO - Creating container for django__django-11964...
+2026-10-01 16:46:53,721 - INFO - Container for django__django-11964 created: afd0fbda2e7140d621b19015411349989572a992a7c94cdbe90edd4078aa3fd2
+2026-10-01 16:46:53,938 - INFO - Container for django__django-11964 started: afd0fbda2e7140d621b19015411349989572a992a7c94cdbe90edd4078aa3fd2
+2026-10-01 16:46:53,938 - INFO - Intermediate patch for django__django-11964 written to logs/evaluation/track3-mistral-improved-20261001T161703Z-custom/codestral-2508/django__django-11964/patch.diff, now applying to container...
+2026-10-01 16:46:54,070 - INFO - >>>>> Applied Patch:
+Checking patch django/db/models/enums.py...
+warning: django/db/models/enums.py has type 100755, expected 100644
+Applied patch django/db/models/enums.py cleanly.
+
+2026-10-01 16:46:58,476 - INFO - Git diff before:
+diff --git a/django/db/models/enums.py b/django/db/models/enums.py
+index bbe362a6ab..7db8b564b0 100755
+--- a/django/db/models/enums.py
++++ b/django/db/models/enums.py
+@@ -71,5 +71,8 @@ class IntegerChoices(int, Choices):
+ class TextChoices(str, Choices):
+     """Class for creating enumerated string choices."""
+ 
++    def __str__(self):
++        return self.value
++
+     def _generate_next_value_(name, start, count, last_values):
+         return name
+2026-10-01 16:46:58,476 - INFO - Eval script for django__django-11964 written to logs/evaluation/track3-mistral-improved-20261001T161703Z-custom/codestral-2508/django__django-11964/eval.sh; copying to container...
+2026-10-01 16:47:07,644 - INFO - Test runtime: 9.10 seconds
+2026-10-01 16:47:07,646 - INFO - Test output for django__django-11964 written to logs/evaluation/track3-mistral-improved-20261001T161703Z-custom/codestral-2508/django__django-11964/test_output.txt
+2026-10-01 16:47:07,744 - INFO - Git diff after:
+diff --git a/django/db/models/enums.py b/django/db/models/enums.py
+index bbe362a6ab..7db8b564b0 100755
+--- a/django/db/models/enums.py
++++ b/django/db/models/enums.py
+@@ -71,5 +71,8 @@ class IntegerChoices(int, Choices):
+ class TextChoices(str, Choices):
+     """Class for creating enumerated string choices."""
+ 
++    def __str__(self):
++        return self.value
++
+     def _generate_next_value_(name, start, count, last_values):
+         return name
+2026-10-01 16:47:07,744 - INFO - Grading answer for django__django-11964...
+2026-10-01 16:47:07,752 - INFO - report: {'django__django-11964': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'infra_failure': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['test_str (model_enums.tests.ChoicesTests)', 'test_textchoices (model_enums.tests.ChoicesTests)']}, 'PASS_TO_PASS': {'success': ['test_integerchoices (model_enums.tests.ChoicesTests)', 'test_integerchoices_auto_label (model_enums.tests.ChoicesTests)', 'test_integerchoices_containment (model_enums.tests.ChoicesTests)', 'test_integerchoices_empty_label (model_enums.tests.ChoicesTests)', 'test_integerchoices_functional_api (model_enums.tests.ChoicesTests)', 'test_invalid_definition (model_enums.tests.ChoicesTests)', 'test_textchoices_auto_label (model_enums.tests.ChoicesTests)', 'test_textchoices_blank_value (model_enums.tests.ChoicesTests)', 'test_textchoices_containment (model_enums.tests.ChoicesTests)', 'test_textchoices_empty_label (model_enums.tests.ChoicesTests)', 'test_textchoices_functional_api (model_enums.tests.ChoicesTests)', 'test_bool_unsupported (model_enums.tests.CustomChoicesTests)', 'test_labels_valid (model_enums.tests.CustomChoicesTests)', 'test_timezone_unsupported (model_enums.tests.CustomChoicesTests)', 'test_uuid_unsupported (model_enums.tests.CustomChoicesTests)'], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for django__django-11964: resolved: False
+2026-10-01 16:47:07,752 - INFO - Attempting to stop container sweb.eval.django__django-11964.track3-mistral-improved-20261001T161703Z-custom...
+2026-10-01 16:47:23,102 - INFO - Container sweb.eval.django__django-11964.track3-mistral-improved-20261001T161703Z-custom stopped successfully.
+2026-10-01 16:47:23,103 - INFO - Attempting to remove container sweb.eval.django__django-11964.track3-mistral-improved-20261001T161703Z-custom...
+2026-10-01 16:47:23,175 - INFO - Container sweb.eval.django__django-11964.track3-mistral-improved-20261001T161703Z-custom removed successfully.

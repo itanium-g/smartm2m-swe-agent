@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 446,
+  "estimated_cost_usd": 0.0063644999999999995,
+  "instance_id": "django__django-12273",
+  "last_successful_test_command": "python tests/runtests.py django.db.models",
+  "model_attempts": 7,
+  "model_requests": 7,
+  "patch_sha256": "bfc74ac74f75d27c54915ce37a7d1efdb17d1718f02cac9e4c831b9ed0ff8a32",
+  "prompt_tokens": 19877,
+  "reason": "patch sealed; clean replay validation is required",
+  "recovery_used": false,
+  "status": "submitted",
+  "total_tokens": 20323,
+  "turns": 7,
+  "validation_required": true
+}

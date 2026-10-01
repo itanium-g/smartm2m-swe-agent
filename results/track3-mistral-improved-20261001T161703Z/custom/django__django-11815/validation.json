@@ -1,0 +1,13 @@
+{
+  "base_commit": "e02f67ef2d03d48128e7a118bf75f0418e24e8ac",
+  "command": "python tests/runtests.py django.db.migrations",
+  "command_sha256": "d3f34dd100cbc1cf8d21edba7a6d7a5399e893a58fc4de614740f6890d54fcb1",
+  "duration_seconds": 1.5019072690047324,
+  "output": "Testing against Django installed in '/testbed/django' with up to 2 processes\nSystem check identified no issues (0 silenced).\n\n----------------------------------------------------------------------\nRan 0 tests in 0.000s\n\nOK\n",
+  "patch_sha256": "3dde5550cdba379bede9391673485ed4f5d89a51860f917a5a8839066ec5f5e2",
+  "reason": "",
+  "returncode": 0,
+  "setup_commands": [],
+  "status": "passed",
+  "timed_out": false
+}

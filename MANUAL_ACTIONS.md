@@ -3,6 +3,14 @@
 Ordinary engineering, testing, provider abstraction, benchmark reproduction, and documentation
 work is complete. The following records the status of operational and manual steps:
 
+The 2026-10-01 follow-up completed Mistral official evaluation with **0/8 custom
+and 0/8 reference**. Groq's reference finished with provider errors; custom
+generation exhausted the account's **200,000-token daily quota**. That run is
+retained as incomplete with no score. Completing a new Groq comparison requires
+sufficient provider quota or a later run after quota becomes available. The
+benchmark history below remains preserved. See
+`docs/benchmark-improvements-20261001.md` for the follow-up record.
+
 1. **Provider secrets and quota.** Provider credentials (`MISTRAL_API_KEY` and `GROQ_API_KEY`)
    are kept strictly in `.env` (gitignored) or outside the repository. Comprehensive secret scans
    confirm no keys appear in Git-tracked code, test fixtures, or retained evidence logs.

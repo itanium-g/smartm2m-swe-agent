@@ -1,0 +1,25 @@
+{
+  "status": "completed",
+  "command": [
+    "/usr/bin/python3",
+    "-m",
+    "swebench.harness.run_evaluation",
+    "--dataset_name",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-improved-20261001T161703Z/dataset-evaluation",
+    "--split",
+    "test",
+    "--predictions_path",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-improved-20261001T161703Z/custom/predictions.jsonl",
+    "--max_workers",
+    "1",
+    "--run_id",
+    "track3-mistral-improved-20261001T161703Z-custom"
+  ],
+  "returncode": 0,
+  "duration_seconds": 87.47629058803432,
+  "stdout": "Running 3 instances...\nAll instances run.\nTotal instances: 50\nInstances submitted: 8\nInstances completed: 3\nInstances incomplete: 42\nInstances resolved: 0\nInstances unresolved: 3\nInstances with likely infrastructure failures: 0\nInstances with ambiguous failures: 0\nInstances with empty patches: 5\nInstances with errors: 0\nUnstopped containers: 0\nUnremoved images: 8\nReport written to logs/evaluation/track3-mistral-improved-20261001T161703Z-custom/results.json\n",
+  "stderr": "\n  0%|          | 0/3 [00:00<?, ?it/s]\n 33%|\u2588\u2588\u2588\u258e      | 1/3 [00:30<01:00, 30.27s/it]\n1 ran successfully, 0 failed:  33%|\u2588\u2588\u2588\u258e      | 1/3 [00:30<01:00, 30.27s/it]\n1 ran successfully, 0 failed:  67%|\u2588\u2588\u2588\u2588\u2588\u2588\u258b   | 2/3 [00:59<00:29, 29.92s/it]\n2 ran successfully, 0 failed:  67%|\u2588\u2588\u2588\u2588\u2588\u2588\u258b   | 2/3 [00:59<00:29, 29.92s/it]\n2 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 3/3 [01:23<00:00, 27.89s/it]\n3 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 3/3 [01:23<00:00, 27.89s/it]\n3 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 3/3 [01:23<00:00, 27.89s/it]\n",
+  "run_id": "track3-mistral-improved-20261001T161703Z-custom",
+  "reason": "",
+  "working_directory": "/home/itanium_dev99/project/smartm2m-swe-agent/results/track3-mistral-improved-20261001T161703Z/evaluation/custom"
+}

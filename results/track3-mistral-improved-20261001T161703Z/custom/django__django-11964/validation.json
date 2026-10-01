@@ -1,0 +1,13 @@
+{
+  "base_commit": "fc2b1cc926e34041953738e58fa6ad3053059b22",
+  "command": "python tests/runtests.py django.db.models",
+  "command_sha256": "e25b96753e5e56d05424ac10dd6a3ab39a9ff0f9ca11e6872df84c95a976a919",
+  "duration_seconds": 1.5350580629892647,
+  "output": "\n----------------------------------------------------------------------\nRan 0 tests in 0.000s\n\nOK\nTesting against Django installed in '/testbed/django' with up to 2 processes\nSystem check identified no issues (0 silenced).\n",
+  "patch_sha256": "0f72f9e75b172baa8ba2e680c014737d3b484af4e2aa6ad5fead7613754b009b",
+  "reason": "",
+  "returncode": 0,
+  "setup_commands": [],
+  "status": "passed",
+  "timed_out": false
+}

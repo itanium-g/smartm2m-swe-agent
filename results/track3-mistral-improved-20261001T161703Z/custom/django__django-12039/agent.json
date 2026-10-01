@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 1960,
+  "estimated_cost_usd": 0.0429855,
+  "instance_id": "django__django-12039",
+  "last_successful_test_command": null,
+  "model_attempts": 22,
+  "model_requests": 22,
+  "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "prompt_tokens": 137405,
+  "reason": "repeated failed action: run_tests with no progress",
+  "recovery_used": true,
+  "status": "loop_exhausted",
+  "total_tokens": 139365,
+  "turns": 22,
+  "validation_required": true
+}

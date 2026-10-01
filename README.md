@@ -6,9 +6,20 @@ primary attempt budget. Tracks 1 and 2 are intentionally out of scope.
 
 ## Status at this checkout
 
+The 2026-10-01 follow-up adds safer recovery, bounded source reads and context,
+and retained controller source snapshots. It passed 60 unit tests, lint,
+compilation, and an offline end-to-end smoke run. Its Mistral run resolved
+**0/8 custom and 0/8 reference**, a regression from the previous final custom
+result of 2/8. The new Groq run encountered provider request errors and then
+exhausted its 200,000-token daily quota during custom generation. It is saved as
+an incomplete quota-blocked attempt with no completed score. Auditing unfinished
+runs is now rejected. See
+[the follow-up record](docs/benchmark-improvements-20261001.md) for results and
+limitations; historical results below are preserved.
+
 Repository visibility is public at `itanium-g/smartm2m-swe-agent` (verified
 2026-09-14). The implementation, dual-provider abstraction (Groq and Mistral),
-frozen protocol, unit test suite (51/51 passing), and benchmark reproduction runs
+frozen protocol, unit test suite (62/62 passing), and benchmark reproduction runs
 are complete:
 
 - **Strict Primary Run Preservation:** `results/track3-primary/` remains strictly preserved and read-only.
@@ -153,10 +164,10 @@ is recorded rather than described as determinism. No UI, database, vector
 store, multi-agent planner, model training, alternate provider, or Track 1/2
 implementation was added.
 
-In this audit environment the real pinned evaluator was invoked with a valid
-empty-patch prediction and stopped before producing an official report because
-the Docker socket is unavailable. That attempt is evidence of an environment
-block, not a benchmark score.
+An earlier infrastructure audit was blocked by an unavailable Docker socket.
+Docker was available for the 2026-10-01 follow-up, and both Mistral arms completed
+official evaluation. Provider quota failures in the Groq follow-up remain
+explicit rather than being treated as evidence about patch quality.
 
 See [DESIGN.md](DESIGN.md), [docs/evaluation-protocol.md](docs/evaluation-protocol.md),
 and [docs/security-and-contamination.md](docs/security-and-contamination.md).

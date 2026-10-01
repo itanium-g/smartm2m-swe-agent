@@ -1,0 +1,44 @@
+{
+  "run_id": "track3-groq-improved-20261001T161703Z",
+  "status": "blocked_provider_quota",
+  "phase": "custom_generation",
+  "reason": "Groq rejected custom generation after its 200,000-token daily account quota was exhausted. The process was interrupted during another HTTP 429 retry; no completed Groq score is available.",
+  "expected_count": 8,
+  "reference_episodes_completed": 8,
+  "custom_episodes_completed": [
+    "sphinx-doc__sphinx-8551"
+  ],
+  "custom_episode_interrupted": "django__django-11999",
+  "custom_episodes_not_attempted": [
+    "django__django-11815",
+    "django__django-12304",
+    "django__django-12273",
+    "django__django-12262",
+    "django__django-12039",
+    "django__django-11964"
+  ],
+  "official_evaluation_completed": false,
+  "recorded_at": "2026-10-01T17:26:17.627806+00:00",
+  "source": {
+    "files": {
+      "__init__.py": "5e52c573d6a91e0105834e7aa3cbfa9721a4974887def83110be2599d7de9039",
+      "__main__.py": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+      "agent.py": "355a266966b1933e5adc714f54a6f46a8a95068bbda117a0dd6f987dbfb8aee8",
+      "cli.py": "ce9faed4d8766fd551752a392a117684dd135956b63ff3e7231423e90f4fe6b0",
+      "config.py": "cf1a351276f35833f5f820da4935a0dda007f54944efabc90da621fc47b2198e",
+      "dataset.py": "066954c413b0ca40ee48a59f9e8b8ed39ddab91137084d66c24f462b8804742a",
+      "evaluator.py": "3f2e6b88ad5f34fdfb270ae08c8e94bbddeafb7e3e5d19d27c9e40ba49cf75de",
+      "experiment.py": "2ad44b45b4a52a70560c6571be18f18386b1b95acf48395a998130d8a95b345d",
+      "model.py": "cbae6ee11b5246b39adf2968bfc8aaa5204a35fa2c5b02b9464d23b03350b01b",
+      "protocol.py": "8e9a1e803942c48c51b99ffdfeac90fca4a6646956c4700c4d335e689417c38a",
+      "reference.py": "6ac8ba8946b99ed7f551a6423ec7eab9eee0a377815f53cd537a467d9a413280",
+      "reporting.py": "f25fba96b5d2b6dbb2a22bc23b46e8ede5ab274bfb2a362eac3614023bb65335",
+      "smoke.py": "a7d46c1bd37c08246221bfc15e9f83ae8d322aa485a895b6c0d017bfc5375f1e",
+      "task.py": "64bbb2f7f970309b4b8b9dc26f7143782f527ea8a53d7f7ab6566419e07e0ffc",
+      "tools.py": "ff8633525d2de473c1a20eb3cf43ce7c5035488f6a72cbcba9bfef96fbb10de5",
+      "validation.py": "c1399558a0503f96f8a2088cb0a0c8b82444adc18fd5d89f94434f276d5dbfdb"
+    },
+    "git_revision": "baa06626c7b0ad47a07a53e7689822bfd9299f5e",
+    "sha256": "f17df58623fc2157464f69c56a1d4a59eec61b4f0ef3ee20ad5f418e2829bd06"
+  }
+}

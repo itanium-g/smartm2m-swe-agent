@@ -1,0 +1,16 @@
+{
+  "completion_tokens": 5080,
+  "estimated_cost_usd": 0.16414679999999995,
+  "instance_id": "django__django-12304",
+  "last_successful_test_command": null,
+  "model_attempts": 60,
+  "model_requests": 60,
+  "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "prompt_tokens": 531916,
+  "reason": "episode turn limit reached",
+  "recovery_used": false,
+  "status": "turn_limit_exhausted",
+  "total_tokens": 536996,
+  "turns": 60,
+  "validation_required": true
+}
