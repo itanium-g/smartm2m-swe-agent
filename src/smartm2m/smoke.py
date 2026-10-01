@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -66,9 +65,12 @@ def _fixture(root: Path) -> Path:
 
 def run_smoke(output_dir: str | Path | None = None) -> Path:
     destination = Path(output_dir).resolve() if output_dir else Path("results").resolve() / "smoke"
-    if destination.exists():
-        shutil.rmtree(destination)
-    destination.mkdir(parents=True, exist_ok=True)
+    try:
+        destination.mkdir(parents=True, exist_ok=False)
+    except FileExistsError as exc:
+        raise FileExistsError(
+            f"smoke output already exists; choose a new --output path: {destination}"
+        ) from exc
     with tempfile.TemporaryDirectory(prefix="smartm2m-smoke-") as temp:
         fixture = _fixture(Path(temp))
         task = TaskSpec(

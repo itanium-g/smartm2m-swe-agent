@@ -302,20 +302,50 @@ def _reference_generation(config: ExperimentConfig, run_dir: Path, result: Any) 
     return rows
 
 
-def audit_run(run_dir: str | Path, config: ExperimentConfig) -> dict[str, Any]:
+def audit_run(run_dir: str | Path) -> dict[str, Any]:
     root = Path(run_dir).resolve()
-    task_ids = [task.instance_id for task in config.tasks]
+    try:
+        run_manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        task_rows = run_manifest["tasks"]
+        expected_count = int(run_manifest["expected_count"])
+        task_ids = [str(task["instance_id"]) for task in task_rows]
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        raise ConfigError(f"run manifest is missing or invalid in {root}") from exc
+    if expected_count <= 0 or len(task_ids) != expected_count:
+        raise ConfigError(
+            f"run manifest task count is inconsistent: found {len(task_ids)}, expected {expected_count}"
+        )
+    if any(not instance_id for instance_id in task_ids) or len(set(task_ids)) != len(task_ids):
+        raise ConfigError("run manifest contains an empty or duplicate instance ID")
     baseline_generation = load_records(root / "reference" / "generation.jsonl")
     custom_generation = load_records(root / "custom" / "generation.jsonl")
     baseline_evaluation = load_records(root / "evaluation" / "reference")
     custom_evaluation = load_records(root / "evaluation" / "custom")
     baseline = outcomes_for_tasks(task_ids, baseline_generation, baseline_evaluation)
     custom = outcomes_for_tasks(task_ids, custom_generation, custom_evaluation)
-    summary = summary_for_pairs(task_ids, baseline, custom, config.expected_count)
+    summary = summary_for_pairs(task_ids, baseline, custom, expected_count)
     summary["run_id"] = root.name
-    summary["bundle_sha256_before_checksums"] = hash_result_bundle(root)
+    summary["bundle_sha256_before_checksums"] = hash_result_bundle(
+        root,
+        exclude=("summary.json", "summary.md", "run.json", "checksums.sha256"),
+    )
+    run_record_path = root / "run.json"
+    run_record = None
+    if run_record_path.is_file():
+        try:
+            run_record = json.loads(run_record_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ConfigError(f"run record is invalid in {root}") from exc
+        if not isinstance(run_record, dict):
+            raise ConfigError(f"run record is invalid in {root}")
     write_summary(root / "summary.json", summary)
-    _json_write(root / "summary.json", summary)
+    if run_record is not None:
+        run_record["status"] = (
+            "completed" if summary.get("custom_resolved") == expected_count else "complete_with_explicit_failures"
+        )
+        run_record["summary"] = summary
+        _json_write(run_record_path, run_record)
+    _write_checksums(root)
     return summary
 
 
@@ -348,6 +378,8 @@ def reproduce(
         "expected_count": config.expected_count,
         "dataset_name": config.dataset_name,
         "dataset_revision": config.dataset_revision,
+        "evaluator_metadata_dataset": config.evaluator_metadata_dataset,
+        "evaluator_metadata_revision": config.evaluator_metadata_revision,
         "tasks": [task.generation_projection() for task in config.tasks],
         "model": config.model.__dict__,
         "reference": config.reference.__dict__,
@@ -455,7 +487,7 @@ def reproduce(
             evaluation / "custom",
             dataset_name=evaluator_dataset.path if evaluator_dataset else None,
         )
-    summary = audit_run(run_dir, config)
+    summary = audit_run(run_dir)
     _json_write(run_dir / "run.json", {
         "run_id": run_dir.name,
         "status": "completed" if summary.get("custom_resolved") == config.expected_count else "complete_with_explicit_failures",

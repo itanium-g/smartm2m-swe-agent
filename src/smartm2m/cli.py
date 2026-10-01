@@ -40,11 +40,19 @@ def _parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--arm", choices=("reference", "custom"), required=True)
 
     audit = commands.add_parser("audit", help="rebuild summary tables from saved evaluation evidence")
-    audit.add_argument("--config", default="configs/experiment.lock.yaml")
+    audit.add_argument(
+        "--config",
+        default="configs/experiment.lock.yaml",
+        help="accepted for compatibility; audit uses the saved run manifest",
+    )
     audit.add_argument("--run-dir", required=True)
 
     smoke = commands.add_parser("smoke", help="run the offline synthetic end-to-end smoke test")
-    smoke.add_argument("--output", default="results/smoke")
+    smoke.add_argument(
+        "--output",
+        default="results/smoke",
+        help="new output directory (existing directories are left untouched)",
+    )
     return parser
 
 
@@ -55,6 +63,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "smoke":
             output = run_smoke(args.output)
             print(json.dumps({"status": "passed", "run_dir": str(output)}, indent=2))
+            return 0
+        if args.command == "audit":
+            summary = audit_run(args.run_dir)
+            print(json.dumps(summary, indent=2))
             return 0
         config_path = args.config
         if getattr(args, "provider", None) == "groq" and config_path in {"configs/experiment.lock.yaml", "configs/experiment.mistral.yaml"}:
@@ -87,10 +99,6 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(json.dumps(result.as_dict(), indent=2))
             return 0 if result.status == "completed" else 2
-        if args.command == "audit":
-            summary = audit_run(args.run_dir, config)
-            print(json.dumps(summary, indent=2))
-            return 0
     except (ConfigError, OSError, RuntimeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

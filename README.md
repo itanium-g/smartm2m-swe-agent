@@ -86,14 +86,17 @@ That command validates the frozen manifest, runs stock mini-swe-agent and the
 custom arm once per task, seals predictions, invokes the pinned official
 SWE-bench evaluator for both arms, computes the fixed-denominator report, and
 writes the evidence bundle under `results/<run-id>/`. Use
-`smartm2m audit --config configs/experiment.mistral.yaml --run-dir results/track3-mistral-codestral-final`
-to rebuild the report without an API key.
+`smartm2m audit --run-dir results/track3-mistral-codestral-final` to rebuild
+the report without an API key. Audit uses the task set saved in that run and
+refreshes its checksums.
 
-During reproduction the exact dataset revision is materialized locally twice:
-first as a safe four-column generation dataset for both agents, then as the
-full evaluator dataset only after both prediction files are sealed. This keeps
-the stock reference CLI compatible with the pinned revision without passing
-gold fields to either generation prompt.
+During reproduction the exact task dataset revision is materialized locally
+twice: first as a safe four-column generation dataset for both agents, then as
+the full evaluator dataset only after both prediction files are sealed. The
+locked evaluator metadata dataset revision supplies image and grading fields
+when the task dataset does not contain them. Task IDs, repositories, and base
+commits are checked before the metadata is joined. Neither source passes gold
+fields to either generation prompt.
 
 The repository includes matched configurations for both providers:
 - **Mistral:** `codestral-2508` via `https://api.mistral.ai/v1`, temperature `0.0`, seed `42`, 2,048 max tokens, 60 turns/steps, \$0.30 / \$0.90 per million input/output tokens.

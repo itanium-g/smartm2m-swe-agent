@@ -243,11 +243,13 @@ def write_summary(path: str | Path, summary: dict[str, Any]) -> None:
     target.with_suffix(".md").write_text("\n".join(lines), encoding="utf-8")
 
 
-def hash_result_bundle(root: str | Path) -> str:
+def hash_result_bundle(root: str | Path, *, exclude: Iterable[str] = ()) -> str:
     base = Path(root)
+    excluded = {Path(value).as_posix() for value in exclude}
     digest = hashlib.sha256()
     for path in sorted(base.rglob("*")):
-        if path.is_file():
-            digest.update(path.relative_to(base).as_posix().encode())
+        relative = path.relative_to(base).as_posix()
+        if path.is_file() and relative not in excluded:
+            digest.update(relative.encode())
             digest.update(path.read_bytes())
     return digest.hexdigest()
