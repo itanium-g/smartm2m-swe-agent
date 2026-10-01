@@ -526,7 +526,13 @@ def reproduce(
 
 def _write_checksums(root: Path) -> None:
     lines: list[str] = []
+    disposable_dirs = {
+        "workspaces", "dataset-generation", "dataset-evaluation",
+        "__pycache__", ".pytest_cache", ".ruff_cache", ".git",
+    }
     for path in sorted(root.rglob("*")):
+        if disposable_dirs.intersection(path.relative_to(root).parts[:-1]):
+            continue
         if path.is_file() and path.name != "checksums.sha256":
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
             lines.append(f"{digest}  {path.relative_to(root).as_posix()}")

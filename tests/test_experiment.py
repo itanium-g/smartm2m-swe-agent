@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from smartm2m.config import ConfigError, ExperimentConfig
-from smartm2m.experiment import audit_run, reproduce
+from smartm2m.experiment import _write_checksums, audit_run, reproduce
 
 
 def _repo(tmp_path: Path) -> tuple[Path, str]:
@@ -99,3 +99,17 @@ def test_audit_preserves_provider_blocked_run(tmp_path: Path):
     assert json.loads((tmp_path / "run.json").read_text()) == record
     assert not (tmp_path / "summary.json").exists()
     assert not (tmp_path / "checksums.sha256").exists()
+
+
+def test_checksums_exclude_disposable_material_but_retain_evaluation_logs(tmp_path: Path):
+    for directory in ("workspaces", "dataset-generation", "dataset-evaluation", ".pytest_cache"):
+        path = tmp_path / directory / "temporary.txt"
+        path.parent.mkdir()
+        path.write_text("disposable")
+    report = tmp_path / "evaluation" / "logs" / "report.json"
+    report.parent.mkdir(parents=True)
+    report.write_text("{}")
+    _write_checksums(tmp_path)
+    rows = (tmp_path / "checksums.sha256").read_text().splitlines()
+    assert len(rows) == 1
+    assert rows[0].endswith("  evaluation/logs/report.json")
