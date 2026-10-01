@@ -358,6 +358,10 @@ def audit_run(run_dir: str | Path) -> dict[str, Any]:
             raise ConfigError(f"run record is invalid in {root}") from exc
         if not isinstance(run_record, dict):
             raise ConfigError(f"run record is invalid in {root}")
+        if run_record.get("status") not in {"completed", "complete_with_explicit_failures"}:
+            raise ConfigError(
+                f"cannot audit unfinished run with status {run_record.get('status', '<missing>')}: {root}"
+            )
     write_summary(root / "summary.json", summary)
     if run_record is not None:
         run_record["status"] = (

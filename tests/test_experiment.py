@@ -3,8 +3,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from smartm2m.config import ExperimentConfig
-from smartm2m.experiment import reproduce
+import pytest
+
+from smartm2m.config import ConfigError, ExperimentConfig
+from smartm2m.experiment import audit_run, reproduce
 
 
 def _repo(tmp_path: Path) -> tuple[Path, str]:
@@ -84,3 +86,16 @@ def test_reproduce_runs_both_subprocess_boundaries_and_audits_reports(tmp_path: 
     assert (run_dir / "reference" / "predictions.raw.json").is_file()
     assert (run_dir / "evaluation" / "reference" / "logs" / "evaluation").is_dir()
     assert (run_dir / "evaluation" / "custom" / "logs" / "evaluation").is_dir()
+
+
+def test_audit_preserves_provider_blocked_run(tmp_path: Path):
+    (tmp_path / "manifest.json").write_text(json.dumps({
+        "expected_count": 1, "tasks": [{"instance_id": "synthetic__one"}],
+    }))
+    record = {"status": "blocked_provider_quota", "reason": "daily quota exhausted"}
+    (tmp_path / "run.json").write_text(json.dumps(record))
+    with pytest.raises(ConfigError, match="cannot audit unfinished run"):
+        audit_run(tmp_path)
+    assert json.loads((tmp_path / "run.json").read_text()) == record
+    assert not (tmp_path / "summary.json").exists()
+    assert not (tmp_path / "checksums.sha256").exists()
