@@ -256,6 +256,8 @@ class ExperimentConfig:
     official_evaluator_command: str = ""
     dataset_name: str = "princeton-nlp/SWE-bench_Verified"
     dataset_revision: str = "b316c349947c29963fce3f4a65967c9807a4b673"
+    evaluator_metadata_dataset: str = "SWE-bench/SWE-bench_Verified"
+    evaluator_metadata_revision: str = "78f471bf655a3137b2e8a75af1501690ec009ec3"
     run_id_prefix: str = "smartm2m"
     config_path: Path = Path("experiment.lock.yaml")
     manifest_source: dict[str, Any] = field(default_factory=dict)
@@ -304,6 +306,12 @@ class ExperimentConfig:
             official_evaluator_command=str(raw.get("official_evaluator_command", "")),
             dataset_name=str(raw.get("dataset_name", "princeton-nlp/SWE-bench_Verified")),
             dataset_revision=str(raw.get("dataset_revision", "")),
+            evaluator_metadata_dataset=str(
+                raw.get("evaluator_metadata_dataset", "SWE-bench/SWE-bench_Verified")
+            ),
+            evaluator_metadata_revision=str(
+                raw.get("evaluator_metadata_revision", "78f471bf655a3137b2e8a75af1501690ec009ec3")
+            ),
             run_id_prefix=str(raw.get("run_id_prefix", "smartm2m")),
             config_path=config_path,
             manifest_source=manifest_source,
@@ -326,8 +334,13 @@ class ExperimentConfig:
                 errors.append(f"forbidden evaluator field leaked into metadata for {task.instance_id}")
             if self.manifest_source and (not task.repo or not task.repo_url):
                 errors.append(f"{task.instance_id}: frozen manifest must include repo and repo_url")
-        if self.protocol_version.startswith("track3") and not self.dataset_revision:
-            errors.append("dataset_revision must be an immutable revision, not blank")
+        if self.protocol_version.startswith("track3"):
+            for label, revision in (
+                ("dataset_revision", self.dataset_revision),
+                ("evaluator_metadata_revision", self.evaluator_metadata_revision),
+            ):
+                if len(revision) != 40 or any(char not in "0123456789abcdef" for char in revision.lower()):
+                    errors.append(f"{label} must be a full 40-character immutable commit SHA")
         if self.manifest_source:
             source_dataset = str(self.manifest_source.get("dataset_name", ""))
             source_revision = str(self.manifest_source.get("dataset_revision", ""))
@@ -356,6 +369,8 @@ class ExperimentConfig:
             "custom": self.custom.__dict__,
             "baseline": self.baseline.__dict__,
             "manifest_source": self.manifest_source,
+            "evaluator_metadata_dataset": self.evaluator_metadata_dataset,
+            "evaluator_metadata_revision": self.evaluator_metadata_revision,
         }
         return sha256_bytes(json.dumps(payload, sort_keys=True, default=str).encode())
 

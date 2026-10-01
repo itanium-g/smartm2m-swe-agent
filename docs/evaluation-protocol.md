@@ -38,10 +38,14 @@ It rejects or omits `patch`, `test_patch`, `hints_text`, `FAIL_TO_PASS`, and
 prompt, trajectory input, or workspace. They become available only to the
 official evaluator after prediction files are sealed.
 
-The reproduction command materializes the pinned revision locally as a
+The reproduction command materializes the pinned task revision locally as a
 four-column safe dataset for reference/custom generation. After both arms
-finish, it materializes the full revision separately for the official
-evaluator. This avoids relying on a floating Hugging Face `main` snapshot.
+finish, it materializes the full task revision separately for the official
+evaluator. If that revision lacks grader metadata, the configured immutable
+evaluator-metadata revision supplies it. The join requires matching instance
+IDs, repositories, and base commits, and the required grader fields must be
+present for every row. An unavailable or incomplete metadata source stops
+evaluation instead of producing an apparently successful empty report.
 
 ## Matched arms
 

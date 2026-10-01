@@ -15,6 +15,19 @@ class _FakeDataset:
             return ["synthetic__one"]
         raise KeyError(name)
 
+    def __iter__(self):
+        values = {
+            "instance_id": "synthetic__one",
+            "repo": "owner/repo",
+            "base_commit": "abc",
+            "problem_statement": "Fix it.",
+            "image": "python:latest",
+            "eval_script": "eval.sh",
+            "log_parser": "pytest",
+            "eval_type": "pytest",
+        }
+        yield {column: values.get(column, "fixture value") for column in self.column_names}
+
     def select_columns(self, columns):
         return _FakeDataset(columns)
 
@@ -104,4 +117,3 @@ def test_evaluator_dataset_includes_required_eval_columns(monkeypatch, tmp_path:
     assert "eval_script" in result.columns
     assert "log_parser" in result.columns
     assert "eval_type" in result.columns
-

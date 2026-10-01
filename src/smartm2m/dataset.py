@@ -18,6 +18,8 @@ SAFE_GENERATION_COLUMNS = (
     "problem_statement",
 )
 
+EVALUATOR_COLUMNS = {"image", "eval_script", "log_parser", "eval_type"}
+
 
 @dataclass(frozen=True)
 class MaterializedDataset:
@@ -73,25 +75,81 @@ def materialize_pinned_dataset(
         raise ConfigError(f"pinned dataset is missing frozen task IDs: {', '.join(missing_ids)}")
 
     if evaluator_only:
-        eval_cols = {"image", "eval_script", "log_parser", "eval_type"}
-        if not eval_cols.issubset(set(dataset.column_names)):
+        materialized = dataset
+        rows = list(dataset)
+        needs_enrichment = not EVALUATOR_COLUMNS.issubset(set(dataset.column_names)) or any(
+            not str(row.get(column) or "").strip()
+            for row in rows
+            for column in EVALUATOR_COLUMNS
+        )
+        if needs_enrichment:
             try:
-                verified_ds = load_dataset("SWE-bench/SWE-bench_Verified", split=config.reference.split)
-                verified_map = {row["instance_id"]: row for row in verified_ds}
-                augmented_rows = []
-                for row in dataset:
-                    row_dict = dict(row)
-                    v_row = verified_map.get(row["instance_id"], {})
-                    for col in eval_cols:
-                        if col not in row_dict:
-                            row_dict[col] = v_row.get(col, "")
-                    augmented_rows.append(row_dict)
+                metadata_ds = load_dataset(
+                    config.evaluator_metadata_dataset,
+                    revision=config.evaluator_metadata_revision,
+                    split=config.reference.split,
+                )
+            except Exception as exc:
+                raise ConfigError(
+                    "could not load pinned evaluator metadata "
+                    f"{config.evaluator_metadata_dataset}@{config.evaluator_metadata_revision}: {exc}"
+                ) from exc
+
+            required_metadata_columns = EVALUATOR_COLUMNS | {"instance_id", "repo", "base_commit"}
+            missing_metadata_columns = sorted(required_metadata_columns - set(metadata_ds.column_names))
+            if missing_metadata_columns:
+                raise ConfigError(
+                    "pinned evaluator metadata is missing columns: "
+                    + ", ".join(missing_metadata_columns)
+                )
+
+            verified_map = {str(row["instance_id"]): row for row in metadata_ds}
+            missing_metadata_ids: list[str] = []
+            mismatched_metadata_ids: list[str] = []
+            incomplete_metadata_ids: list[str] = []
+            augmented_rows = []
+            for row in rows:
+                instance_id = str(row["instance_id"])
+                verified_row = verified_map.get(instance_id)
+                if verified_row is None:
+                    missing_metadata_ids.append(instance_id)
+                    continue
+                if (
+                    str(verified_row.get("repo", "")) != str(row.get("repo", ""))
+                    or str(verified_row.get("base_commit", "")) != str(row.get("base_commit", ""))
+                ):
+                    mismatched_metadata_ids.append(instance_id)
+                    continue
+                row_dict = dict(row)
+                for column in EVALUATOR_COLUMNS:
+                    if not str(row_dict.get(column) or "").strip():
+                        row_dict[column] = verified_row.get(column, "")
+                    if not str(row_dict.get(column) or "").strip():
+                        incomplete_metadata_ids.append(instance_id)
+                augmented_rows.append(row_dict)
+
+            if missing_metadata_ids:
+                raise ConfigError(
+                    "pinned evaluator metadata is missing task IDs: "
+                    + ", ".join(sorted(missing_metadata_ids)[:10])
+                )
+            if mismatched_metadata_ids:
+                raise ConfigError(
+                    "pinned evaluator metadata repo/base commit does not match task IDs: "
+                    + ", ".join(sorted(mismatched_metadata_ids)[:10])
+                )
+            if incomplete_metadata_ids:
+                raise ConfigError(
+                    "pinned evaluator metadata has empty required fields for task IDs: "
+                    + ", ".join(sorted(set(incomplete_metadata_ids))[:10])
+                )
+
+            try:
                 from datasets import Dataset
+
                 materialized = Dataset.from_list(augmented_rows)
-            except Exception:
-                materialized = dataset
-        else:
-            materialized = dataset
+            except Exception as exc:
+                raise ConfigError(f"could not combine pinned evaluator metadata: {exc}") from exc
     else:
         materialized = dataset.select_columns(list(SAFE_GENERATION_COLUMNS))
 

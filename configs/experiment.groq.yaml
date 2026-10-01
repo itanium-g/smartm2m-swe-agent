@@ -50,5 +50,7 @@
   "results_root": "../results",
   "dataset_name": "MariusHobbhahn/swe-bench-verified-mini",
   "dataset_revision": "b316c349947c29963fce3f4a65967c9807a4b673",
+  "evaluator_metadata_dataset": "SWE-bench/SWE-bench_Verified",
+  "evaluator_metadata_revision": "78f471bf655a3137b2e8a75af1501690ec009ec3",
   "run_id_prefix": "track3-groq"
 }
