@@ -90,3 +90,33 @@ and official SWE-bench images:
 No web UI, database, vector retrieval, multi-agent orchestration, model
 training, alternate provider, repeated-attempt aggregation, Track 1, or Track
 2 work was included.
+
+## Exploratory external coding-agent benchmark architecture
+
+Beyond the primary Track 3 custom vs reference reliability experiment, the repository provides an additive, cleanly separated benchmark harness for complete external coding agents: **OpenAI Codex CLI** (`codex`) versus **Google Antigravity CLI** (`agy`).
+
+```mermaid
+flowchart TD
+    FROZEN["Frozen 8 Tasks (tasks/evaluation.json)"] --> CODEX_ARM["Codex CLI (`codex exec`)"]
+    FROZEN --> AGY_ARM["AGY CLI (`agy -p`)"]
+    CODEX_ARM --> WS_C["Clean Workspace (Base Commit + .benchmark/test)"]
+    AGY_ARM --> WS_A["Clean Workspace (Base Commit + .benchmark/test)"]
+    WS_C --> DIFF_C["git diff --binary"]
+    WS_A --> DIFF_A["git diff --binary"]
+    DIFF_C --> PRED_C["codex/predictions.jsonl"]
+    DIFF_A --> PRED_A["agy/predictions.jsonl"]
+    PRED_C --> EVAL["Official SWE-bench Evaluator (commit 02e7a74)"]
+    PRED_A --> EVAL
+    EVAL --> REPORT["Paired comparison.json + comparison.md + checksums.sha256"]
+```
+
+### Architectural Principles
+
+1. **Native Headless Execution:** Directly spawns native CLIs with no intermediary translation layers (no ACP in V1).
+2. **One Process Per Task:** Every task attempt spawns a fresh subprocess. No shared session or conversation history across tasks.
+3. **Workspace Isolation:** Every task executes inside an ephemeral checkout verified against `task.base_commit` and clean `git status`.
+4. **Patch Authority:** Extracted strictly from `git diff --binary` on the working tree against base commit; model prose is never trusted.
+5. **Container Test Helper:** Injects `./.benchmark/test` (excluded via `.git/info/exclude`) enabling agents to run repository-native tests inside official SWE-bench images without leaking evaluator labels.
+6. **Strict Development Isolation:** The development AGY session building the benchmark never leaks context or state to measured benchmark runs.
+7. **Resumability & Safety:** Interrupted runs report `provider_blocked` or `incomplete` without faking headline 0/8 scores; `--resume` skips completed task attempts.
+

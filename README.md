@@ -169,5 +169,50 @@ Docker was available for the 2026-10-01 follow-up, and both Mistral arms complet
 official evaluation. Provider quota failures in the Groq follow-up remain
 explicit rather than being treated as evidence about patch quality.
 
+## Exploratory Codex CLI vs Antigravity CLI Benchmark
+
+In addition to the primary Track 3 custom vs reference evaluation, this repository includes an exploratory external coding-agent benchmark comparing:
+1. **OpenAI Codex CLI** (`codex-cli 0.159.3`, model `gpt-6.1-sol`)
+2. **Google Antigravity CLI** (`agy 1.2.14`, model `gemini-3.8-flash-high`)
+
+on the **exact same frozen eight SWE-bench Verified tasks** (`tasks/evaluation.selection.json`).
+
+### Why this benchmark exists and why it is separate
+The primary Track 3 experiment measures the lift of a reliability controller around the *same model* under *matched budgets*. In contrast, this exploratory benchmark asks:
+> *"How do modern autonomous coding-agent CLIs perform as complete systems on fixed SWE-bench tasks under identical process, workspace, time, and evaluation protocols?"*
+
+This is **not** a same-model comparison. Each agent brings its own proprietary system prompts, context management routines, tool definitions, reasoning configuration, and execution loops. It does not replace or modify historical Track 3 runs.
+
+### Architectural Highlights
+- **Native Headless Execution (No ACP for V1):** Directly invokes `codex exec` and `agy -p` subprocesses without translation layers.
+- **One Process Per Task:** Every task runs in a fresh, isolated subprocess with no conversation persistence across tasks.
+- **Strict Workspace Isolation:** Disposable clones checked out at exact task base commits with empty git status verified before launch.
+- **Patch Authority:** Predictions are extracted directly via `git diff --binary <base_commit>` from the working tree. Model prose is never trusted.
+- **Container Test Helper (`./.benchmark/test`):** Injected helper allows both agents to run targeted tests in the official SWE-bench x86_64 task container without exposing evaluation gold labels. Excluded via `.git/info/exclude`.
+- **Incomplete Run Safety:** Quota/auth blockers report `provider_blocked` or `incomplete` without calculating headline 0/8 scores. `--resume` continues pending tasks.
+
+### Benchmark Commands
+```bash
+# 1. Dry run validation (verifies manifest, docker, and CLI versions)
+smartm2m external-benchmark --dry-run --config configs/external-agents.yaml
+
+# 2. Integration smoke test on a synthetic repository (no benchmark tasks consumed)
+smartm2m external-benchmark --smoke --agent all
+
+# 3. Benchmark Codex CLI arm (8 frozen tasks)
+smartm2m external-benchmark --agent codex --config configs/external-agents.yaml --run-id cli-comparison-v1
+
+# 4. Benchmark Antigravity CLI arm (8 frozen tasks)
+smartm2m external-benchmark --agent agy --config configs/external-agents.yaml --run-id cli-comparison-v1
+
+# 5. Benchmark both arms sequentially and run official SWE-bench evaluation
+smartm2m external-benchmark --agent all --config configs/external-agents.yaml --run-id cli-comparison-v1
+
+# 6. Resume an interrupted benchmark run
+smartm2m external-benchmark --resume --config configs/external-agents.yaml --run-id cli-comparison-v1
+```
+
+See [docs/external-agent-benchmark.md](docs/external-agent-benchmark.md) for full protocol, freeze manifest, and limitations.
+
 See [DESIGN.md](DESIGN.md), [docs/evaluation-protocol.md](docs/evaluation-protocol.md),
 and [docs/security-and-contamination.md](docs/security-and-contamination.md).
