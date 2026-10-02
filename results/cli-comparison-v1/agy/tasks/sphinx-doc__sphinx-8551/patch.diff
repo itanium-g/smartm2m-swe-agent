@@ -1,0 +1,118 @@
+diff --git a/sphinx/domains/python.py b/sphinx/domains/python.py
+index 79d7e4f46..dad3c270d 100644
+--- a/sphinx/domains/python.py
++++ b/sphinx/domains/python.py
+@@ -271,11 +271,11 @@ class PyXrefMixin:
+                   contnode: Node = None, env: BuildEnvironment = None) -> Node:
+         result = super().make_xref(rolename, domain, target,  # type: ignore
+                                    innernode, contnode, env)
+-        result['refspecific'] = True
+         if target.startswith(('.', '~')):
+             prefix, result['reftarget'] = target[0], target[1:]
+             if prefix == '.':
+                 text = target[1:]
++                result['refspecific'] = True
+             elif prefix == '~':
+                 text = target.split('.')[-1]
+             for node in result.traverse(nodes.Text):
+@@ -1233,6 +1233,14 @@ class PythonDomain(Domain):
+             if mod.docname in docnames:
+                 self.modules[modname] = mod
+ 
++    def process_field_xref(self, pnode: pending_xref) -> None:
++        modname = self.env.ref_context.get('py:module')
++        if modname:
++            pnode['py:module'] = modname
++        clsname = self.env.ref_context.get('py:class')
++        if clsname:
++            pnode['py:class'] = clsname
++
+     def find_obj(self, env: BuildEnvironment, modname: str, classname: str,
+                  name: str, type: str, searchmode: int = 0
+                  ) -> List[Tuple[str, ObjectEntry]]:
+diff --git a/sphinx/util/docfields.py b/sphinx/util/docfields.py
+index 404bb127f..e792fc3b3 100644
+--- a/sphinx/util/docfields.py
++++ b/sphinx/util/docfields.py
+@@ -295,6 +295,7 @@ class DocFieldTransformer:
+                         self.directive.domain,
+                         target,
+                         contnode=content[0],
++                        env=self.directive.state.document.settings.env,
+                     )
+                     if _is_single_paragraph(field_body):
+                         paragraph = cast(nodes.paragraph, field_body[0])
+diff --git a/tests/test_domain_py.py b/tests/test_domain_py.py
+index 2dc97bed9..db1459fed 100644
+--- a/tests/test_domain_py.py
++++ b/tests/test_domain_py.py
+@@ -865,3 +865,69 @@ def test_warn_missing_reference(app, status, warning):
+     assert 'index.rst:6: WARNING: undefined label: no-label' in warning.getvalue()
+     assert ('index.rst:6: WARNING: Failed to create a cross reference. A title or caption not found: existing-label'
+             in warning.getvalue())
++
++
++@pytest.mark.sphinx('dummy')
++def test_info_field_list_var_type_xref(app, warning):
++    text = (".. py:class:: mod.A\n"
++            ".. py:class:: mod.submod.A\n"
++            "\n"
++            ".. py:currentmodule:: mod\n"
++            "\n"
++            ".. py:function:: f()\n"
++            "\n"
++            "   :param A a:\n"
++            "   :rtype: A\n"
++            "\n"
++            ".. py:currentmodule:: mod.submod\n"
++            "\n"
++            ".. py:function:: f()\n"
++            "\n"
++            "   :param A a:\n"
++            "   :rtype: A\n")
++    doctree = restructuredtext.parse(app, text)
++    refnodes = list(doctree.traverse(pending_xref))
++    assert len(refnodes) == 4
++
++    assert refnodes[0]['reftarget'] == 'A'
++    assert refnodes[0]['py:module'] == 'mod'
++    assert not refnodes[0].hasattr('refspecific')
++
++    assert refnodes[1]['reftarget'] == 'A'
++    assert refnodes[1]['py:module'] == 'mod'
++    assert not refnodes[1].hasattr('refspecific')
++
++    assert refnodes[2]['reftarget'] == 'A'
++    assert refnodes[2]['py:module'] == 'mod.submod'
++    assert not refnodes[2].hasattr('refspecific')
++
++    assert refnodes[3]['reftarget'] == 'A'
++    assert refnodes[3]['py:module'] == 'mod.submod'
++    assert not refnodes[3].hasattr('refspecific')
++
++    domain = app.env.get_domain('py')
++    node0 = domain.resolve_xref(app.env, 'index', app.builder, 'class', 'A', refnodes[0], nodes.Text('A'))
++    assert node0['reftitle'] == 'mod.A'
++    node1 = domain.resolve_xref(app.env, 'index', app.builder, 'class', 'A', refnodes[1], nodes.Text('A'))
++    assert node1['reftitle'] == 'mod.A'
++    node2 = domain.resolve_xref(app.env, 'index', app.builder, 'class', 'A', refnodes[2], nodes.Text('A'))
++    assert node2['reftitle'] == 'mod.submod.A'
++    node3 = domain.resolve_xref(app.env, 'index', app.builder, 'class', 'A', refnodes[3], nodes.Text('A'))
++    assert node3['reftitle'] == 'mod.submod.A'
++
++    assert 'more than one target found for cross-reference' not in warning.getvalue()
++
++    # Test prefix handling: '.' sets refspecific, '~' strips prefix
++    text2 = (".. py:function:: f()\n"
++             "\n"
++             "   :param .mod.A a:\n"
++             "   :param ~mod.A b:\n")
++    doctree2 = restructuredtext.parse(app, text2)
++    refnodes2 = list(doctree2.traverse(pending_xref))
++    assert len(refnodes2) == 2
++    assert refnodes2[0]['reftarget'] == 'mod.A'
++    assert refnodes2[0].astext() == 'mod.A'
++    assert refnodes2[0]['refspecific'] is True
++    assert refnodes2[1]['reftarget'] == 'mod.A'
++    assert refnodes2[1].astext() == 'A'
++    assert not refnodes2[1].hasattr('refspecific')

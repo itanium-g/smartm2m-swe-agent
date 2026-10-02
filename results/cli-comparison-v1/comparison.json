@@ -1,0 +1,122 @@
+{
+  "agy": {
+    "effort": "high",
+    "model": "gemini-3.8-flash-high",
+    "percent": 100.0,
+    "resolved": 8,
+    "status": "completed"
+  },
+  "codex": {
+    "model": "gpt-6.1-sol",
+    "percent": 100.0,
+    "resolved": 8,
+    "status": "completed"
+  },
+  "expected_count": 8,
+  "pairs": {
+    "agy_only": 0,
+    "both_solved": 8,
+    "codex_only": 0,
+    "neither": 0
+  },
+  "protocol_version": "external-agents-v1",
+  "run_id": "cli-comparison-v1",
+  "tasks": [
+    {
+      "agy_eval_reason": "",
+      "agy_patch_sha": "f5b3572cd107e088b832f200f20a97f1531cdffd868d2a9b26746af43e49f8e3",
+      "agy_resolved": true,
+      "agy_status": "generated",
+      "base_commit": "57ed10c68057c96491acbd3e62254ccfaf9e3861",
+      "codex_eval_reason": "",
+      "codex_patch_sha": "e64917543b30e5dacbb91d2e0addc947cbbb3439a38b1bf683b0b81048d86521",
+      "codex_resolved": true,
+      "codex_status": "generated",
+      "instance_id": "sphinx-doc__sphinx-8551"
+    },
+    {
+      "agy_eval_reason": "",
+      "agy_patch_sha": "591ab5da31f6d567dac64b99b64c3c2db423c1d5d896f4e8080b54f26acd3169",
+      "agy_resolved": true,
+      "agy_status": "generated",
+      "base_commit": "84633905273fc916e3d17883810d9969c03f73c2",
+      "codex_eval_reason": "",
+      "codex_patch_sha": "f2a1f6e8abab505ee4c940e3648a260a85ffcc98851b9fcb19ecf165d107ecc7",
+      "codex_resolved": true,
+      "codex_status": "generated",
+      "instance_id": "django__django-11999"
+    },
+    {
+      "agy_eval_reason": "",
+      "agy_patch_sha": "44b962f784aa2c92fb5c6f1f73cb73c2219a941be7b3b5993cdd60f29ecf9794",
+      "agy_resolved": true,
+      "agy_status": "generated",
+      "base_commit": "e02f67ef2d03d48128e7a118bf75f0418e24e8ac",
+      "codex_eval_reason": "",
+      "codex_patch_sha": "76d61552cdb409b6bce75fa8be0aec36f435399a8cdbc726ae628ebf29d3307f",
+      "codex_resolved": true,
+      "codex_status": "generated",
+      "instance_id": "django__django-11815"
+    },
+    {
+      "agy_eval_reason": "",
+      "agy_patch_sha": "9544ffa23b311868e812b08d2e2858e0b611c90cdb56b39cc64075e86ce7e38b",
+      "agy_resolved": true,
+      "agy_status": "generated",
+      "base_commit": "4c1b401e8250f9f520b3c7dc369554477ce8b15a",
+      "codex_eval_reason": "",
+      "codex_patch_sha": "36edcc3f2ffbce605ca63b8e1fba29b037ba4d61e8e46dfa43812a82ae48b9cf",
+      "codex_resolved": true,
+      "codex_status": "generated",
+      "instance_id": "django__django-12304"
+    },
+    {
+      "agy_eval_reason": "",
+      "agy_patch_sha": "566e4a580eda7aaeb91f7f6a1180cc97d1c4fc4c4cc15c357a88d789c630ef3e",
+      "agy_resolved": true,
+      "agy_status": "generated",
+      "base_commit": "927c903f3cd25c817c21738328b53991c035b415",
+      "codex_eval_reason": "",
+      "codex_patch_sha": "3a7ce3648602afba91156837780847ebb79c44f7ca053a197b6be8f0516430fb",
+      "codex_resolved": true,
+      "codex_status": "generated",
+      "instance_id": "django__django-12273"
+    },
+    {
+      "agy_eval_reason": "",
+      "agy_patch_sha": "b92c1ff5b8174fb84aeb18a7b2a56bb762f37e6bc7fdc64e51ac480d10c7e1dc",
+      "agy_resolved": true,
+      "agy_status": "generated",
+      "base_commit": "69331bb851c34f05bc77e9fc24020fe6908b9cd5",
+      "codex_eval_reason": "",
+      "codex_patch_sha": "d763a298b6204d45040a3f9d29c7b34390a8f9c8cd7544d45ee9d2d201e9f970",
+      "codex_resolved": true,
+      "codex_status": "generated",
+      "instance_id": "django__django-12262"
+    },
+    {
+      "agy_eval_reason": "",
+      "agy_patch_sha": "a0f45f8a2eb147cc60c15033ecf4930becc51dc58921152368887b39403b3924",
+      "agy_resolved": true,
+      "agy_status": "generated",
+      "base_commit": "58c1acb1d6054dfec29d0f30b1033bae6ef62aec",
+      "codex_eval_reason": "",
+      "codex_patch_sha": "d9ca605b1e4a9e345709851ab9fc00f170fe64c7cae76e45cfc34dc6b1ce1acc",
+      "codex_resolved": true,
+      "codex_status": "generated",
+      "instance_id": "django__django-12039"
+    },
+    {
+      "agy_eval_reason": "",
+      "agy_patch_sha": "9d6fd4a9779706e24455baa0c6ccc5517c1dc2aedf3361751021b6cdadff03a4",
+      "agy_resolved": true,
+      "agy_status": "generated",
+      "base_commit": "fc2b1cc926e34041953738e58fa6ad3053059b22",
+      "codex_eval_reason": "",
+      "codex_patch_sha": "4c4f67a5b133800f12147cc337930fbb6816c8527783ff87da990d420e8d4d8a",
+      "codex_resolved": true,
+      "codex_status": "generated",
+      "instance_id": "django__django-11964"
+    }
+  ]
+}

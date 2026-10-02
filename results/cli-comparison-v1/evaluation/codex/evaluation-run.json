@@ -1,0 +1,25 @@
+{
+  "status": "completed",
+  "command": [
+    "/usr/bin/python3",
+    "-m",
+    "swebench.harness.run_evaluation",
+    "--dataset_name",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/cli-comparison-v1/dataset-evaluation",
+    "--split",
+    "test",
+    "--predictions_path",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/cli-comparison-v1/codex/predictions.jsonl",
+    "--max_workers",
+    "1",
+    "--run_id",
+    "cli-comparison-v1-codex"
+  ],
+  "returncode": 0,
+  "duration_seconds": 235.5543768061325,
+  "stdout": "Running 8 instances...\nAll instances run.\nTotal instances: 50\nInstances submitted: 8\nInstances completed: 8\nInstances incomplete: 42\nInstances resolved: 8\nInstances unresolved: 0\nInstances with likely infrastructure failures: 0\nInstances with ambiguous failures: 0\nInstances with empty patches: 0\nInstances with errors: 0\nUnstopped containers: 0\nUnremoved images: 8\nReport written to logs/evaluation/cli-comparison-v1-codex/results.json\n",
+  "stderr": "\nGenerating train split: 0 examples [00:00, ? examples/s]\nGenerating train split: 50 examples [00:00, 2209.55 examples/s]\n\n  0%|          | 0/8 [00:00<?, ?it/s]\n 12%|\u2588\u258e        | 1/8 [00:33<03:51, 33.02s/it]\n1 ran successfully, 0 failed:  12%|\u2588\u258e        | 1/8 [00:33<03:51, 33.02s/it]\n1 ran successfully, 0 failed:  25%|\u2588\u2588\u258c       | 2/8 [01:03<03:10, 31.74s/it]\n2 ran successfully, 0 failed:  25%|\u2588\u2588\u258c       | 2/8 [01:03<03:10, 31.74s/it]\n2 ran successfully, 0 failed:  38%|\u2588\u2588\u2588\u258a      | 3/8 [01:35<02:38, 31.71s/it]\n3 ran successfully, 0 failed:  38%|\u2588\u2588\u2588\u258a      | 3/8 [01:35<02:38, 31.71s/it]\n3 ran successfully, 0 failed:  50%|\u2588\u2588\u2588\u2588\u2588     | 4/8 [02:04<02:04, 31.15s/it]\n4 ran successfully, 0 failed:  50%|\u2588\u2588\u2588\u2588\u2588     | 4/8 [02:04<02:04, 31.15s/it]\n4 ran successfully, 0 failed:  62%|\u2588\u2588\u2588\u2588\u2588\u2588\u258e   | 5/8 [02:31<01:31, 30.38s/it]\n5 ran successfully, 0 failed:  62%|\u2588\u2588\u2588\u2588\u2588\u2588\u258e   | 5/8 [02:31<01:31, 30.38s/it]\n5 ran successfully, 0 failed:  75%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258c  | 6/8 [02:59<00:59, 29.93s/it]\n6 ran successfully, 0 failed:  75%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258c  | 6/8 [02:59<00:59, 29.93s/it]\n6 ran successfully, 0 failed:  88%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a | 7/8 [03:26<00:29, 29.48s/it]\n7 ran successfully, 0 failed:  88%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a | 7/8 [03:26<00:29, 29.48s/it]\n7 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 8/8 [03:51<00:00, 28.96s/it]\n8 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 8/8 [03:51<00:00, 28.96s/it]\n8 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 8/8 [03:51<00:00, 28.96s/it]\n",
+  "run_id": "cli-comparison-v1-codex",
+  "reason": "",
+  "working_directory": "/home/itanium_dev99/project/smartm2m-swe-agent/results/cli-comparison-v1/evaluation/codex"
+}

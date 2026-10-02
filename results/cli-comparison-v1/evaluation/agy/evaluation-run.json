@@ -1,0 +1,25 @@
+{
+  "status": "completed",
+  "command": [
+    "/usr/bin/python3",
+    "-m",
+    "swebench.harness.run_evaluation",
+    "--dataset_name",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/cli-comparison-v1/dataset-evaluation",
+    "--split",
+    "test",
+    "--predictions_path",
+    "/home/itanium_dev99/project/smartm2m-swe-agent/results/cli-comparison-v1/agy/predictions.jsonl",
+    "--max_workers",
+    "1",
+    "--run_id",
+    "cli-comparison-v1-agy"
+  ],
+  "returncode": 0,
+  "duration_seconds": 193.3779326369986,
+  "stdout": "Running 8 instances...\nAll instances run.\nTotal instances: 50\nInstances submitted: 8\nInstances completed: 8\nInstances incomplete: 42\nInstances resolved: 8\nInstances unresolved: 0\nInstances with likely infrastructure failures: 0\nInstances with ambiguous failures: 0\nInstances with empty patches: 0\nInstances with errors: 0\nUnstopped containers: 0\nUnremoved images: 8\nReport written to logs/evaluation/cli-comparison-v1-agy/results.json\n",
+  "stderr": "\n  0%|          | 0/8 [00:00<?, ?it/s]\n 12%|\u2588\u258e        | 1/8 [00:24<02:50, 24.30s/it]\n1 ran successfully, 0 failed:  12%|\u2588\u258e        | 1/8 [00:24<02:50, 24.30s/it]\n1 ran successfully, 0 failed:  25%|\u2588\u2588\u258c       | 2/8 [00:48<02:26, 24.36s/it]\n2 ran successfully, 0 failed:  25%|\u2588\u2588\u258c       | 2/8 [00:48<02:26, 24.36s/it]\n2 ran successfully, 0 failed:  38%|\u2588\u2588\u2588\u258a      | 3/8 [01:13<02:02, 24.47s/it]\n3 ran successfully, 0 failed:  38%|\u2588\u2588\u2588\u258a      | 3/8 [01:13<02:02, 24.47s/it]\n3 ran successfully, 0 failed:  50%|\u2588\u2588\u2588\u2588\u2588     | 4/8 [01:37<01:37, 24.30s/it]\n4 ran successfully, 0 failed:  50%|\u2588\u2588\u2588\u2588\u2588     | 4/8 [01:37<01:37, 24.30s/it]\n4 ran successfully, 0 failed:  62%|\u2588\u2588\u2588\u2588\u2588\u2588\u258e   | 5/8 [02:00<01:12, 24.10s/it]\n5 ran successfully, 0 failed:  62%|\u2588\u2588\u2588\u2588\u2588\u2588\u258e   | 5/8 [02:00<01:12, 24.10s/it]\n5 ran successfully, 0 failed:  75%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258c  | 6/8 [02:24<00:48, 24.06s/it]\n6 ran successfully, 0 failed:  75%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258c  | 6/8 [02:24<00:48, 24.06s/it]\n6 ran successfully, 0 failed:  88%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a | 7/8 [02:47<00:23, 23.96s/it]\n7 ran successfully, 0 failed:  88%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a | 7/8 [02:47<00:23, 23.96s/it]\n7 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 8/8 [03:09<00:00, 23.70s/it]\n8 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 8/8 [03:09<00:00, 23.70s/it]\n8 ran successfully, 0 failed: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 8/8 [03:09<00:00, 23.70s/it]\n",
+  "run_id": "cli-comparison-v1-agy",
+  "reason": "",
+  "working_directory": "/home/itanium_dev99/project/smartm2m-swe-agent/results/cli-comparison-v1/evaluation/agy"
+}

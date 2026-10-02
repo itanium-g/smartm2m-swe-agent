@@ -1,0 +1,8 @@
+{
+  "agent": "agy",
+  "status": "completed",
+  "tasks_attempted": 8,
+  "expected_tasks": 8,
+  "generated_patches": 8,
+  "empty_patches": 0
+}

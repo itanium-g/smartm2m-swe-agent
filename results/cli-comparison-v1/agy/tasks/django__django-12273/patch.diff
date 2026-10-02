@@ -1,0 +1,129 @@
+diff --git a/django/db/models/base.py b/django/db/models/base.py
+index 844c01e95e..b685fee51b 100644
+--- a/django/db/models/base.py
++++ b/django/db/models/base.py
+@@ -569,6 +569,10 @@ class Model(metaclass=ModelBase):
+         return getattr(self, meta.pk.attname)
+ 
+     def _set_pk_val(self, value):
++        for parent in self._meta.get_parent_list():
++            parent_link = self._meta.get_ancestor_link(parent)
++            if parent_link and parent_link.primary_key:
++                setattr(self, parent._meta.pk.attname, value)
+         return setattr(self, self._meta.pk.attname, value)
+ 
+     pk = property(_get_pk_val, _set_pk_val)
+@@ -806,7 +810,14 @@ class Model(metaclass=ModelBase):
+             # Make sure the link fields are synced between parent and self.
+             if (field and getattr(self, parent._meta.pk.attname) is None and
+                     getattr(self, field.attname) is not None):
+-                setattr(self, parent._meta.pk.attname, getattr(self, field.attname))
++                if self._state.adding:
++                    setattr(self, parent._meta.pk.attname, getattr(self, field.attname))
++                else:
++                    setattr(self, field.attname, None)
++            elif (field and getattr(self, field.attname) is None and
++                    getattr(self, parent._meta.pk.attname) is not None):
++                if not self._state.adding:
++                    setattr(self, parent._meta.pk.attname, None)
+             parent_inserted = self._save_parents(cls=parent, using=using, update_fields=update_fields)
+             updated = self._save_table(
+                 cls=parent, using=using, update_fields=update_fields,
+diff --git a/tests/model_inheritance_regress/models.py b/tests/model_inheritance_regress/models.py
+index 5e4c928dc9..3e0f8e14a8 100644
+--- a/tests/model_inheritance_regress/models.py
++++ b/tests/model_inheritance_regress/models.py
+@@ -232,3 +232,13 @@ class Congressman(Person, Politician):
+ 
+ class Senator(Congressman):
+     pass
++
++
++class CustomPKParent(models.Model):
++    uid = models.AutoField(primary_key=True)
++    f = models.BooleanField(default=False)
++
++
++class CustomPKChild(CustomPKParent):
++    pass
++
+diff --git a/tests/model_inheritance_regress/tests.py b/tests/model_inheritance_regress/tests.py
+index b0156ff9ac..c80241ee09 100644
+--- a/tests/model_inheritance_regress/tests.py
++++ b/tests/model_inheritance_regress/tests.py
+@@ -10,10 +10,11 @@ from django.test import TestCase
+ 
+ from .models import (
+     ArticleWithAuthor, BachelorParty, BirthdayParty, BusStation, Child,
+-    DerivedM, InternalCertificationAudit, ItalianRestaurant, M2MChild,
+-    MessyBachelorParty, ParkingLot, ParkingLot3, ParkingLot4A, ParkingLot4B,
+-    Person, Place, Profile, QualityControl, Restaurant, SelfRefChild,
+-    SelfRefParent, Senator, Supplier, TrainStation, User, Wholesaler,
++    CustomPKChild, CustomPKParent, DerivedM, InternalCertificationAudit,
++    ItalianRestaurant, M2MChild, MessyBachelorParty, ParkingLot, ParkingLot3,
++    ParkingLot4A, ParkingLot4B, Person, Place, Profile, QualityControl,
++    Restaurant, SelfRefChild, SelfRefParent, Senator, Supplier, TrainStation,
++    User, Wholesaler,
+ )
+ 
+ 
+@@ -558,3 +559,59 @@ class ModelInheritanceTest(TestCase):
+         italian_restaurant.restaurant_ptr = None
+         self.assertIsNone(italian_restaurant.pk)
+         self.assertIsNone(italian_restaurant.id)
++
++    def test_create_new_instance_after_resetting_pk(self):
++        # Resetting pk on a child model with default pk.
++        r = Restaurant.objects.create(name='Original', address='123 Main')
++        orig_pk = r.pk
++        r.pk = None
++        r.name = 'Copy'
++        r.save()
++        self.assertNotEqual(r.pk, orig_pk)
++        self.assertEqual(Restaurant.objects.count(), 2)
++        self.assertEqual(Place.objects.get(pk=orig_pk).name, 'Original')
++        self.assertEqual(Place.objects.get(pk=r.pk).name, 'Copy')
++
++        # Resetting parent's pk attribute directly.
++        r2 = Restaurant.objects.create(name='Original2', address='123 Main')
++        orig_pk2 = r2.pk
++        r2.id = None
++        r2.name = 'Copy2'
++        r2.save()
++        self.assertNotEqual(r2.pk, orig_pk2)
++        self.assertEqual(Place.objects.get(pk=orig_pk2).name, 'Original2')
++        self.assertEqual(Place.objects.get(pk=r2.pk).name, 'Copy2')
++
++        # Multi-level inheritance: resetting pk on grand-child model.
++        ir = ItalianRestaurant.objects.create(name='Original Italian', address='123 Main')
++        orig_pk_ir = ir.pk
++        ir.pk = None
++        ir.name = 'Copy Italian'
++        ir.save()
++        self.assertNotEqual(ir.pk, orig_pk_ir)
++        self.assertEqual(Place.objects.get(pk=orig_pk_ir).name, 'Original Italian')
++        self.assertEqual(Place.objects.get(pk=ir.pk).name, 'Copy Italian')
++
++        # Child model with a custom primary key on parent model.
++        child = CustomPKChild.objects.create(f=True)
++        orig_pk_child = child.pk
++        child.uid = None
++        child.f = False
++        child.save()
++        self.assertNotEqual(child.pk, orig_pk_child)
++        self.assertEqual(CustomPKChild.objects.count(), 2)
++        self.assertEqual(CustomPKParent.objects.count(), 2)
++        self.assertTrue(CustomPKParent.objects.get(pk=orig_pk_child).f)
++        self.assertFalse(CustomPKParent.objects.get(pk=child.pk).f)
++
++        child2 = CustomPKChild.objects.create(f=True)
++        orig_pk_child2 = child2.pk
++        child2.pk = None
++        child2.f = False
++        child2.save()
++        self.assertNotEqual(child2.pk, orig_pk_child2)
++        self.assertEqual(CustomPKChild.objects.count(), 4)
++        self.assertEqual(CustomPKParent.objects.count(), 4)
++        self.assertTrue(CustomPKParent.objects.get(pk=orig_pk_child2).f)
++        self.assertFalse(CustomPKParent.objects.get(pk=child2.pk).f)
++

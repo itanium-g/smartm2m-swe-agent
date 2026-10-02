@@ -1,0 +1,54 @@
+diff --git a/sphinx/domains/python.py b/sphinx/domains/python.py
+index 79d7e4f46..abb064ca4 100644
+--- a/sphinx/domains/python.py
++++ b/sphinx/domains/python.py
+@@ -271,10 +271,13 @@ class PyXrefMixin:
+                   contnode: Node = None, env: BuildEnvironment = None) -> Node:
+         result = super().make_xref(rolename, domain, target,  # type: ignore
+                                    innernode, contnode, env)
+-        result['refspecific'] = True
++        if env:
++            result['py:module'] = env.ref_context.get('py:module')
++            result['py:class'] = env.ref_context.get('py:class')
+         if target.startswith(('.', '~')):
+             prefix, result['reftarget'] = target[0], target[1:]
+             if prefix == '.':
++                result['refspecific'] = True
+                 text = target[1:]
+             elif prefix == '~':
+                 text = target.split('.')[-1]
+diff --git a/tests/test_domain_py.py b/tests/test_domain_py.py
+index 2dc97bed9..2f24f6653 100644
+--- a/tests/test_domain_py.py
++++ b/tests/test_domain_py.py
+@@ -234,6 +234,30 @@ def test_get_full_qualified_name():
+     assert domain.get_full_qualified_name(node) == 'module1.Class.func'
+ 
+ 
++@pytest.mark.parametrize('module', ['mod', 'mod.submod'])
++@pytest.mark.parametrize('prefix', ['', '.', '~'])
++def test_type_field_xrefs(app, module, prefix, warning):
++    warning.seek(0)
++    warning.truncate(0)
++    text = ('.. py:class:: mod.A\n\n'
++            '.. py:class:: mod.submod.A\n\n'
++            '.. py:currentmodule:: %s\n\n'
++            '.. py:function:: f()\n\n'
++            '   :param %sA a: description\n'
++            '   :type b: %sA\n'
++            '   :param b: description\n'
++            '   :rtype: %sA\n') % (module, prefix, prefix, prefix)
++    doctree = restructuredtext.parse(app, text)
++    domain = app.env.get_domain('py')
++    refs = list(doctree.traverse(pending_xref))
++    assert len(refs) == 3
++    for ref in refs:
++        resolved = domain.resolve_xref(app.env, 'index', app.builder,
++                                       ref['reftype'], ref['reftarget'], ref, ref[0])
++        assert resolved['reftitle'] == module + '.A'
++    assert warning.getvalue() == ''
++
++
+ def test_parse_annotation(app):
+     doctree = _parse_annotation("int", app.env)
+     assert_node(doctree, ([pending_xref, "int"],))

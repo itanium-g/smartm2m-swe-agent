@@ -1,0 +1,40 @@
+diff --git a/django/db/models/base.py b/django/db/models/base.py
+index 844c01e95e..200f680cda 100644
+--- a/django/db/models/base.py
++++ b/django/db/models/base.py
+@@ -804,7 +804,9 @@ class Model(metaclass=ModelBase):
+         inserted = False
+         for parent, field in meta.parents.items():
+             # Make sure the link fields are synced between parent and self.
+-            if (field and getattr(self, parent._meta.pk.attname) is None and
++            if field and not self._state.adding and getattr(self, field.attname) is None:
++                setattr(self, parent._meta.pk.attname, None)
++            if (self._state.adding and field and getattr(self, parent._meta.pk.attname) is None and
+                     getattr(self, field.attname) is not None):
+                 setattr(self, parent._meta.pk.attname, getattr(self, field.attname))
+             parent_inserted = self._save_parents(cls=parent, using=using, update_fields=update_fields)
+diff --git a/tests/model_inheritance/tests.py b/tests/model_inheritance/tests.py
+index 5eef0f5bfa..85f264469d 100644
+--- a/tests/model_inheritance/tests.py
++++ b/tests/model_inheritance/tests.py
+@@ -13,6 +13,20 @@ from .models import (
+ 
+ 
+ class ModelInheritanceTests(TestCase):
++    def test_reset_primary_key(self):
++        for model in (Restaurant, ItalianRestaurant):
++            for field in ('pk', 'id'):
++                with self.subTest(model=model, field=field):
++                    restaurant = model.objects.create(name='Original', address='Address')
++                    original_pk = restaurant.pk
++                    setattr(restaurant, field, None)
++                    restaurant.name = 'Copy'
++                    restaurant.save()
++                    self.assertNotEqual(restaurant.pk, original_pk)
++                    self.assertEqual(restaurant.pk, restaurant.id)
++                    self.assertEqual(Place.objects.get(pk=original_pk).name, 'Original')
++                    self.assertEqual(model.objects.get(pk=restaurant.pk).name, 'Copy')
++
+     def test_abstract(self):
+         # The Student and Worker models both have 'name' and 'age' fields on
+         # them and inherit the __str__() method, just as with normal Python

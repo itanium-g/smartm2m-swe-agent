@@ -1,0 +1,64 @@
+diff --git a/django/db/models/enums.py b/django/db/models/enums.py
+index f48143ddaf..1e05f8ce1c 100644
+--- a/django/db/models/enums.py
++++ b/django/db/models/enums.py
+@@ -57,6 +57,8 @@ class ChoicesMeta(enum.EnumMeta):
+     def values(cls):
+         return [value for value, _ in cls.choices]
+ 
++    do_not_call_in_templates = True
++
+ 
+ class Choices(enum.Enum, metaclass=ChoicesMeta):
+     """Class for creating enumerated choices."""
+diff --git a/tests/model_enums/tests.py b/tests/model_enums/tests.py
+index b9356479de..3d95e9fa47 100644
+--- a/tests/model_enums/tests.py
++++ b/tests/model_enums/tests.py
+@@ -4,6 +4,7 @@ import ipaddress
+ import uuid
+ 
+ from django.db import models
++from django.template import Context, Template
+ from django.test import SimpleTestCase
+ from django.utils.functional import Promise
+ from django.utils.translation import gettext_lazy as _
+@@ -149,6 +150,21 @@ class ChoicesTests(SimpleTestCase):
+                 with self.subTest(member=member):
+                     self.assertEqual(str(test[member.name]), str(member.value))
+ 
++    def test_do_not_call_in_templates(self):
++        for test in [Gender, Suit, YearInSchool, Vehicle, models.Choices, models.IntegerChoices, models.TextChoices]:
++            with self.subTest(test=test):
++                self.assertIs(test.do_not_call_in_templates, True)
++        template = Template(
++            '{% if student.year_in_school == YearInSchool.FRESHMAN %}yes{% endif %}'
++        )
++        context = Context({
++            'YearInSchool': YearInSchool,
++            'student': {'year_in_school': YearInSchool.FRESHMAN},
++        })
++        self.assertEqual(template.render(context), 'yes')
++        context['student']['year_in_school'] = YearInSchool.SOPHOMORE
++        self.assertEqual(template.render(context), '')
++
+ 
+ class Separator(bytes, models.Choices):
+     FS = b'\x1c', 'File Separator'
+@@ -240,6 +256,16 @@ class CustomChoicesTests(SimpleTestCase):
+             with self.subTest(choice_enum.__name__):
+                 self.assertNotIn(None, choice_enum.labels)
+ 
++    def test_do_not_call_in_templates(self):
++        enums = (
++            Separator, Constants, Set, MoonLandings, DateAndTime, MealTimes,
++            Frequency, Number, IPv4Address, IPv6Address, IPv4Network,
++            IPv6Network,
++        )
++        for choice_enum in enums:
++            with self.subTest(choice_enum.__name__):
++                self.assertIs(choice_enum.do_not_call_in_templates, True)
++
+     def test_bool_unsupported(self):
+         msg = "type 'bool' is not an acceptable base type"
+         with self.assertRaisesMessage(TypeError, msg):

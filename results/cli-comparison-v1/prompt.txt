@@ -1,0 +1,22 @@
+You are solving a SWE-bench software engineering issue.
+
+The repository is already checked out at the required base commit.
+
+Issue:
+
+{{problem_statement}}
+
+Fix the issue in the repository.
+
+Requirements:
+
+- Inspect the existing implementation before modifying it.
+- Make the smallest correct general source-code change.
+- Do not modify tests merely to make them pass.
+- Do not modify benchmark or evaluation infrastructure.
+- Run relevant repository tests when useful.
+- You can run tests using ./.benchmark/test <optional test command> (for example `./.benchmark/test` to run default tests or `./.benchmark/test <command>` to run a targeted test in the task container).
+- Do not search the internet for the original issue, solution, pull request, patch, SWE-bench answer, or hidden evaluator information.
+- Leave the final implementation in the working tree.
+- Do not create a Git commit.
+- The benchmark controller will extract `git diff` and grade it using the official SWE-bench evaluator.

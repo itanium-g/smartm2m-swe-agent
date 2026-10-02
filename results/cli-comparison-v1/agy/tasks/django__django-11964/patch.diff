@@ -1,0 +1,97 @@
+diff --git a/django/db/models/enums.py b/django/db/models/enums.py
+index bbe362a6ab..1c73ab21b2 100644
+--- a/django/db/models/enums.py
++++ b/django/db/models/enums.py
+@@ -60,7 +60,9 @@ class ChoicesMeta(enum.EnumMeta):
+ 
+ class Choices(enum.Enum, metaclass=ChoicesMeta):
+     """Class for creating enumerated choices."""
+-    pass
++
++    def __str__(self):
++        return str(self.value)
+ 
+ 
+ class IntegerChoices(int, Choices):
+diff --git a/tests/model_enums/tests.py b/tests/model_enums/tests.py
+index 6b4bd6e7fd..1c2d369900 100644
+--- a/tests/model_enums/tests.py
++++ b/tests/model_enums/tests.py
+@@ -47,6 +47,7 @@ class ChoicesTests(SimpleTestCase):
+         self.assertEqual(Suit.values, [1, 2, 3, 4])
+         self.assertEqual(Suit.names, ['DIAMOND', 'SPADE', 'HEART', 'CLUB'])
+ 
++        self.assertEqual(str(Suit.DIAMOND), '1')
+         self.assertEqual(repr(Suit.DIAMOND), '<Suit.DIAMOND: 1>')
+         self.assertEqual(Suit.DIAMOND.label, 'Diamond')
+         self.assertEqual(Suit.DIAMOND.value, 1)
+@@ -88,6 +89,7 @@ class ChoicesTests(SimpleTestCase):
+         self.assertEqual(YearInSchool.values, ['FR', 'SO', 'JR', 'SR', 'GR'])
+         self.assertEqual(YearInSchool.names, ['FRESHMAN', 'SOPHOMORE', 'JUNIOR', 'SENIOR', 'GRADUATE'])
+ 
++        self.assertEqual(str(YearInSchool.FRESHMAN), 'FR')
+         self.assertEqual(repr(YearInSchool.FRESHMAN), "<YearInSchool.FRESHMAN: 'FR'>")
+         self.assertEqual(YearInSchool.FRESHMAN.label, 'Freshman')
+         self.assertEqual(YearInSchool.FRESHMAN.value, 'FR')
+@@ -251,3 +253,17 @@ class CustomChoicesTests(SimpleTestCase):
+         with self.assertRaisesMessage(TypeError, msg):
+             class Identifier(uuid.UUID, models.Choices):
+                 A = '972ce4eb-a95f-4a56-9339-68c208a76f18'
++
++    def test_str(self):
++        cases = (
++            (Suit.DIAMOND, '1'),
++            (YearInSchool.FRESHMAN, 'FR'),
++            (Vehicle.CAR, '1'),
++            (Gender.MALE, 'M'),
++            (Constants.PI, '3.141592653589793'),
++            (MoonLandings.APOLLO_11, '1969-07-20'),
++            (Separator.FS, "b'\\x1c'"),
++        )
++        for choice, expected in cases:
++            with self.subTest(choice=choice):
++                self.assertEqual(str(choice), expected)
+diff --git a/tests/model_fields/test_charfield.py b/tests/model_fields/test_charfield.py
+index cf3ce0c4c5..09f25a1c77 100644
+--- a/tests/model_fields/test_charfield.py
++++ b/tests/model_fields/test_charfield.py
+@@ -34,9 +34,13 @@ class TestCharField(TestCase):
+             F = 'Festival!'
+ 
+         p1 = Post.objects.create(title=Event.C, body=Event.F)
++        self.assertEqual(str(p1.title), 'Carnival!')
++        self.assertEqual(str(p1.body), 'Festival!')
+         p1.refresh_from_db()
+         self.assertEqual(p1.title, 'Carnival!')
+         self.assertEqual(p1.body, 'Festival!')
++        self.assertEqual(str(p1.title), 'Carnival!')
++        self.assertEqual(str(p1.body), 'Festival!')
+         self.assertEqual(p1.title, Event.C)
+         self.assertEqual(p1.body, Event.F)
+         p2 = Post.objects.get(title='Carnival!')
+diff --git a/tests/model_fields/test_integerfield.py b/tests/model_fields/test_integerfield.py
+index 606d71057a..20ca6d5a54 100644
+--- a/tests/model_fields/test_integerfield.py
++++ b/tests/model_fields/test_integerfield.py
+@@ -42,6 +42,21 @@ class IntegerFieldTests(TestCase):
+         self.assertEqual(qs.count(), 1)
+         self.assertEqual(qs[0].value, max_value)
+ 
++    def test_assignment_from_choice_enum(self):
++        class Number(models.IntegerChoices):
++            ONE = 1
++            TWO = 2
++
++        obj = self.model.objects.create(value=Number.ONE)
++        self.assertEqual(str(obj.value), '1')
++        obj.refresh_from_db()
++        self.assertEqual(obj.value, 1)
++        self.assertEqual(obj.value, Number.ONE)
++        self.assertEqual(str(obj.value), '1')
++        obj2 = self.model.objects.get(value=Number.ONE)
++        self.assertEqual(obj, obj2)
++        self.assertEqual(obj2.value, Number.ONE)
++
+     def test_backend_range_save(self):
+         """
+         Backend specific ranges can be saved without corruption.
