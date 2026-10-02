@@ -52,6 +52,11 @@ class ExternalAgentsConfig:
     manifest_sha256: str = ""
     manifest_source: dict[str, Any] = field(default_factory=dict)
 
+    @property
+    def reference(self) -> Any:
+        from types import SimpleNamespace
+        return SimpleNamespace(split=self.split)
+
     @classmethod
     def load(cls, path: str | Path) -> "ExternalAgentsConfig":
         load_env_file()
