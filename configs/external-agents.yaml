@@ -18,9 +18,8 @@ codex:
   model: gpt-6.1-sol
   ephemeral: true
   structured_output: true
-  # Note: sandbox 'workspace-write' restricts host socket access.
-  # If running containerized repository tests via Docker socket, 'danger-full-access' is available.
-  sandbox: workspace-write
+  # Sandbox mode: danger-full-access allows the agent to execute ./.benchmark/test inside Docker
+  sandbox: danger-full-access
   ignore_user_config: true
   ignore_rules: true
 
