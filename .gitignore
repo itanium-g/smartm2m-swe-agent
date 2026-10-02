@@ -11,6 +11,7 @@ build/
 # material produced while reproducing a run.
 results/smoke/
 results/ci-smoke/
+results/external-smoke/
 results/*/workspaces/
 results/*/dataset-generation/
 results/*/dataset-evaluation/
