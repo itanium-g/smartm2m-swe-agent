@@ -53,6 +53,29 @@ def _parser() -> argparse.ArgumentParser:
         default="results/smoke",
         help="new output directory (existing directories are left untouched)",
     )
+
+    ext = commands.add_parser(
+        "external-benchmark",
+        help="benchmark external coding agents (Codex CLI and Antigravity CLI)",
+    )
+    ext.add_argument(
+        "--agent",
+        choices=("codex", "agy", "all"),
+        default="all",
+        help="select external coding agent to benchmark (codex, agy, or all)",
+    )
+    ext.add_argument(
+        "--config",
+        default="configs/external-agents.yaml",
+        help="path to external agents benchmark configuration file",
+    )
+    ext.add_argument("--run-id", help="unique benchmark run directory identifier")
+    ext.add_argument("--task", help="target single SWE-bench instance ID")
+    ext.add_argument("--resume", action="store_true", help="resume an interrupted or incomplete run")
+    ext.add_argument("--dry-run", action="store_true", help="validate environment and manifests without running agents")
+    ext.add_argument("--smoke", action="store_true", help="run integration smoke test on disposable synthetic repository")
+    ext.add_argument("--generation-only", action="store_true", help="run agent generation without official evaluation")
+    ext.add_argument("--evaluate-only", action="store_true", help="run official evaluation on existing run directory")
     return parser
 
 
@@ -67,6 +90,32 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "audit":
             summary = audit_run(args.run_dir)
             print(json.dumps(summary, indent=2))
+            return 0
+        if args.command == "external-benchmark":
+            if getattr(args, "smoke", False):
+                from .external_agents.smoke import run_external_smoke
+
+                smoke_out = "results/external-smoke" if not args.run_id else f"results/{args.run_id}"
+                smoke_report = run_external_smoke(smoke_out, agent_choice=args.agent)
+                print(json.dumps(smoke_report, indent=2))
+                return 0
+
+            from .external_agents.config import ExternalAgentsConfig
+            from .external_agents.runner import run_benchmark
+
+            ext_cfg = ExternalAgentsConfig.load(args.config)
+            out_dir = run_benchmark(
+                ext_cfg,
+                agent_choice=args.agent,
+                run_id=args.run_id,
+                resume=args.resume,
+                dry_run_only=args.dry_run,
+                generation_only=args.generation_only,
+                evaluate_only=args.evaluate_only,
+                target_task_id=args.task,
+            )
+            if not args.dry_run:
+                print(json.dumps({"status": "completed", "run_dir": str(out_dir)}, indent=2))
             return 0
         config_path = args.config
         if getattr(args, "provider", None) == "groq" and config_path in {"configs/experiment.lock.yaml", "configs/experiment.mistral.yaml"}:

@@ -1,0 +1,39 @@
+{
+  "protocol_version": "external-agents-v1",
+  "freeze_timestamp": "2026-10-02T01:34:00Z",
+  "starting_git_sha": "eef22441946082c683875a9c90ccd34fe60a24a1",
+  "config_path": "configs/external-agents.yaml",
+  "config_sha256": "42af157991df364325f2f83dc71286916671aa71a4de51f2366fb4591ba1fbb5",
+  "prompt_template_sha256": "1771dda65c5a88cf37551f3cb175ee609efcdc23fca86f41ac1d7cebb70441f8",
+  "task_selection_sha256": "395f2adfaf4b9b2c5a129b7de83fe886d4f3b281fb9588d5802e2dfcaa717dfb",
+  "task_count": 8,
+  "tasks": [
+    "sphinx-doc__sphinx-8551",
+    "django__django-11999",
+    "django__django-11815",
+    "django__django-12304",
+    "django__django-12273",
+    "django__django-12262",
+    "django__django-12039",
+    "django__django-11964"
+  ],
+  "evaluator_sha": "02e7a74ffd0b707aab73d203fe87bdc7c76afc8e",
+  "codex": {
+    "version": "codex-cli 0.159.3",
+    "model": "gpt-6.1-sol",
+    "sandbox": "workspace-write",
+    "ephemeral": true
+  },
+  "agy": {
+    "version": "1.2.14",
+    "model": "gemini-3.8-flash-high",
+    "effort": "high",
+    "output_format": "stream-json"
+  },
+  "resource_limits": {
+    "attempts_per_task": 1,
+    "wall_time_seconds": 2700,
+    "sequential": true,
+    "command_timeout_seconds": 120
+  }
+}
