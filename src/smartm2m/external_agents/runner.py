@@ -6,6 +6,7 @@ import hashlib
 import json
 import shutil
 import subprocess
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -265,7 +266,7 @@ def run_agent_benchmark(
         if not tasks_to_run:
             raise ConfigError(f"target task {target_task_id} not found in manifest")
 
-    for task in tasks_to_run:
+    for idx, task in enumerate(tasks_to_run, 1):
         instance_dir = tasks_root / task.instance_id.replace("/", "__")
         meta_file = instance_dir / "metadata.json"
 
@@ -276,17 +277,39 @@ def run_agent_benchmark(
                 saved_res = ExternalTaskResult.from_dict(saved)
                 # If attempt previously finished (generated, generation_failed, or timed_out), keep it
                 if saved_res.terminal_status in {"generated", "generation_failed", "timed_out"}:
+                    print(
+                        f"[{agent.name}] [{idx}/{len(tasks_to_run)}] Resuming cached task {task.instance_id}: {saved_res.terminal_status}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
                     results.append(saved_res)
                     continue
             except Exception:
                 pass  # Rerun corrupted task metadata
 
+        print(
+            f"[{agent.name}] [{idx}/{len(tasks_to_run)}] Starting task {task.instance_id}...",
+            file=sys.stderr,
+            flush=True,
+        )
         task_result = run_task_attempt(agent, task, config, workspaces_dir, instance_dir)
         results.append(task_result)
+        print(
+            f"[{agent.name}] [{idx}/{len(tasks_to_run)}] Finished task {task.instance_id}: "
+            f"status={task_result.terminal_status}, exit={task_result.exit_code}, "
+            f"wall_time={task_result.wall_duration_seconds:.1f}s, patch_len={len(task_result.patch)}",
+            file=sys.stderr,
+            flush=True,
+        )
 
         if task_result.terminal_status == "provider_blocked":
             agent_status = "provider_blocked"
             blocker_reason = task_result.termination_reason
+            print(
+                f"[{agent.name}] Provider blocked encountered on {task.instance_id}: {blocker_reason}",
+                file=sys.stderr,
+                flush=True,
+            )
             break
 
     # If tasks remain unattempted due to blocker or target filter
@@ -364,6 +387,7 @@ def evaluate_arm(
     run_label: str,
 ) -> None:
     """Run the official SWE-bench evaluator on an arm's predictions."""
+    print(f"[{run_label}] Starting official evaluation on {predictions_path}...", file=sys.stderr, flush=True)
     eval_config = SimpleNamespace(
         dataset_name=config.dataset_name,
         official_evaluator_command="",
@@ -377,6 +401,7 @@ def evaluate_arm(
         output_dir=eval_output_dir,
         dataset_name=str(evaluator_dataset_path) if evaluator_dataset_path else None,
     )
+    print(f"[{run_label}] Evaluation complete. Results at {eval_output_dir}", file=sys.stderr, flush=True)
 
 
 def build_comparison_report(
